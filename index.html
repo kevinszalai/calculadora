@@ -233,6 +233,32 @@
     transition:opacity .18s ease, transform .18s ease;
   }
   .toast.visible{opacity:1; transform:translateY(0); pointer-events:auto;}
+
+  .scroll-to-result-btn{
+    position:fixed;
+    left:50%;
+    bottom:16px;
+    transform:translateX(-50%) translateY(6px);
+    background:var(--amber);
+    color:var(--on-accent);
+    border:none;
+    border-radius:20px;
+    padding:11px 20px;
+    font-family:'Archivo',sans-serif;
+    font-weight:700;
+    font-size:13px;
+    box-shadow:0 12px 28px -8px rgba(0,0,0,0.55);
+    z-index:35;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  .scroll-to-result-btn.visible{
+    opacity:1;
+    transform:translateX(-50%) translateY(0);
+    pointer-events:auto;
+  }
+  .scroll-to-result-btn:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
   #undo-btn{
     background:none;
     border:none;
@@ -448,6 +474,7 @@
     font-weight:600;
     padding:0 14px;
     border-radius:8px;
+    scroll-margin-top:16px;
   }
   select{
     font-family:'Archivo',sans-serif;
@@ -1156,6 +1183,8 @@
   <span>Se borró</span>
   <button type="button" id="undo-btn">Deshacer</button>
 </div>
+
+<button type="button" class="scroll-to-result-btn" id="scroll-to-result-btn">↓ Ver resultado</button>
 
 <script>
   // ---------- Accesibilidad (persistido en este navegador) ----------
@@ -2242,6 +2271,84 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
   document.addEventListener('focusin', (e) => {
     if (e.target.matches('input[type=text]')) e.target.select();
   });
+
+  // ---------- Que el resultado no quede tapado por el teclado ----------
+  // Al tocar un campo, el teclado del celular ocupa la mitad de abajo de
+  // la pantalla. Acomodamos el scroll para que el campo quede arriba del
+  // todo, dejando el mayor espacio posible visible debajo (justo donde
+  // suele estar el resultado) por encima del teclado.
+  let lastFocusedField = null;
+
+  function scrollFieldAboveKeyboard(){
+    if (lastFocusedField && document.activeElement === lastFocusedField && lastFocusedField.scrollIntoView){
+      lastFocusedField.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    }
+  }
+
+  document.addEventListener('focusin', (e) => {
+    if (!e.target.matches('input[type=text], select')) return;
+    lastFocusedField = e.target;
+    // Alternativa por si el navegador no dispara el resize de visualViewport
+    // (o lo hace distinto): igual probamos con un tiempo fijo como red de
+    // contención.
+    setTimeout(scrollFieldAboveKeyboard, 350);
+  });
+
+  // Botón flotante "Ver resultado": aparece solo si, mientras escribís, el
+  // resultado de la pestaña activa queda tapado por el teclado.
+  const scrollToResultBtn = document.getElementById('scroll-to-result-btn');
+
+  function getActiveResultEl(){
+    const activePanel = document.querySelector('.panel.active');
+    if (!activePanel) return null;
+    const results = activePanel.querySelectorAll('.result');
+    return results.length ? results[results.length - 1] : null;
+  }
+
+  function isMostlyVisible(el){
+    if (!el) return true;
+    const rect = el.getBoundingClientRect();
+    const visibleHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    return rect.top < visibleHeight - 30 && rect.bottom > 0;
+  }
+
+  function positionScrollToResultBtn(){
+    if (!window.visualViewport) return;
+    const keyboardHeight = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
+    scrollToResultBtn.style.bottom = Math.max(16, keyboardHeight + 14) + 'px';
+  }
+
+  function updateScrollToResultBtn(){
+    const active = document.activeElement;
+    const isTypingField = active && active.matches && active.matches('input[type=text], select');
+    if (!isTypingField){
+      scrollToResultBtn.classList.remove('visible');
+      return;
+    }
+    const resultEl = getActiveResultEl();
+    if (resultEl && !isMostlyVisible(resultEl)){
+      positionScrollToResultBtn();
+      scrollToResultBtn.classList.add('visible');
+    } else {
+      scrollToResultBtn.classList.remove('visible');
+    }
+  }
+
+  scrollToResultBtn.addEventListener('click', () => {
+    const resultEl = getActiveResultEl();
+    if (resultEl) resultEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    buzz();
+  });
+
+  document.addEventListener('focusin', () => setTimeout(updateScrollToResultBtn, 400));
+  document.addEventListener('focusout', () => setTimeout(updateScrollToResultBtn, 200));
+  document.addEventListener('scroll', updateScrollToResultBtn, true);
+  if (window.visualViewport){
+    window.visualViewport.addEventListener('resize', () => {
+      scrollFieldAboveKeyboard();
+      updateScrollToResultBtn();
+    });
+  }
 
   // ---------- Enter/Listo pasa al siguiente campo ----------
   // Evita tener que tocar el próximo campo a mano; en el último campo
