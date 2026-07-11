@@ -118,8 +118,8 @@
     cursor:default;
   }
   .offline-banner{
-    background:rgba(239,100,97,0.10);
-    border-color:rgba(239,100,97,0.35);
+    background:color-mix(in srgb, var(--danger) 10%, transparent);
+    border-color:color-mix(in srgb, var(--danger) 35%, transparent);
     color:var(--danger);
   }
   .install-banner{
@@ -528,12 +528,12 @@
     color:var(--amber-bright);
   }
   .op-row button.active[data-op="descuento"]{
-    background:rgba(94,156,107,0.16);
+    background:color-mix(in srgb, var(--good) 16%, transparent);
     border-color:var(--good);
     color:var(--good);
   }
   .op-row button.active[data-op="aumento"]{
-    background:rgba(239,100,97,0.16);
+    background:color-mix(in srgb, var(--danger) 16%, transparent);
     border-color:var(--danger);
     color:var(--danger);
   }
@@ -566,12 +566,12 @@
     color:var(--amber-bright);
   }
   #mode-directo:not(.op-aumento) .chip.active{
-    background:rgba(94,156,107,0.18);
+    background:color-mix(in srgb, var(--good) 18%, transparent);
     border-color:var(--good);
     color:var(--good);
   }
   #mode-directo.op-aumento .chip.active{
-    background:rgba(239,100,97,0.18);
+    background:color-mix(in srgb, var(--danger) 18%, transparent);
     border-color:var(--danger);
     color:var(--danger);
   }
@@ -686,11 +686,11 @@
     color:var(--amber-bright);
   }
   .chain-row .chain-op button.active[data-op="descuento"]{
-    background:rgba(94,156,107,0.18);
+    background:color-mix(in srgb, var(--good) 18%, transparent);
     color:var(--good);
   }
   .chain-row .chain-op button.active[data-op="aumento"]{
-    background:rgba(239,100,97,0.18);
+    background:color-mix(in srgb, var(--danger) 18%, transparent);
     color:var(--danger);
   }
   .chain-row input[type=text]{
@@ -740,8 +740,8 @@
     background:var(--result-bg);
     border:1px solid var(--result-border);
   }
-  .result.tone-good{background:rgba(94,156,107,0.08); border-color:rgba(94,156,107,0.35);}
-  .result.tone-bad{background:rgba(201,96,62,0.08); border-color:rgba(201,96,62,0.35);}
+  .result.tone-good{background:color-mix(in srgb, var(--good) 8%, transparent); border-color:color-mix(in srgb, var(--good) 35%, transparent);}
+  .result.tone-bad{background:color-mix(in srgb, var(--danger) 8%, transparent); border-color:color-mix(in srgb, var(--danger) 35%, transparent);}
   .result-empty{
     font-size:13px;
     color:var(--ink-dim);
@@ -769,7 +769,7 @@
   }
   .result-row.copyable:hover{background:rgba(255,255,255,0.04);}
   .result-row.copyable:active{background:rgba(46,196,182,0.10);}
-  .result-row.row-copied{background:rgba(94,203,130,0.14);}
+  .result-row.row-copied{background:color-mix(in srgb, var(--good) 14%, transparent);}
   .result-row.row-copied span:last-child{color:var(--good);}
   .result-row span:first-child{color:var(--ink-dim);}
   .result-row span:last-child{
@@ -818,8 +818,8 @@
     margin-left:8px;
     vertical-align:middle;
   }
-  .result-badge.down{background:rgba(94,156,107,0.16); color:var(--good);}
-  .result-badge.up{background:rgba(201,96,62,0.16); color:var(--danger);}
+  .result-badge.down{background:color-mix(in srgb, var(--good) 16%, transparent); color:var(--good);}
+  .result-badge.up{background:color-mix(in srgb, var(--danger) 16%, transparent); color:var(--danger);}
 
   /* Cotizaciones de Dólar: grilla horizontal en vez de filas apiladas */
   .dolar-rate-grid{
