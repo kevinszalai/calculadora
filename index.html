@@ -1,11 +1,12 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" style="background:var(--bg);">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Calculadora · Porcentajes y Medidas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Calculadora · Todo en uno</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#10141c">
+<meta name="color-scheme" content="dark">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Calculadora">
@@ -16,6 +17,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
+    color-scheme:dark;
     --bg:#10141c;
     --card:#171c28;
     --border:#262d3d;
@@ -28,6 +30,37 @@
     --danger:#ef6461;
     --good:#5ecb82;
     --on-accent:#0a1620;
+  }
+  /* Alto contraste: mismas reglas de CSS, otros valores de color */
+  html.a11y-contrast{
+    --bg:#000000;
+    --card:#0b0b0b;
+    --border:#6b7688;
+    --ink:#ffffff;
+    --ink-dim:#d6dae2;
+    --amber:#4be9da;
+    --amber-bright:#7ff2e6;
+    --result-bg:rgba(75,233,218,0.14);
+    --result-border:#4be9da;
+    --danger:#ff9a96;
+    --good:#8ff09f;
+    --on-accent:#000000;
+  }
+  /* Modo claro: día real, no solo alto contraste */
+  html.a11y-light{
+    color-scheme:light;
+    --bg:#eef1f5;
+    --card:#ffffff;
+    --border:#d7dde6;
+    --ink:#1a2130;
+    --ink-dim:#5b6472;
+    --amber:#0e8a7d;
+    --amber-bright:#0aa393;
+    --result-bg:rgba(14,138,125,0.08);
+    --result-border:rgba(14,138,125,0.35);
+    --danger:#c23934;
+    --good:#1f8a4c;
+    --on-accent:#ffffff;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0; background:var(--bg); min-height:100%;}
@@ -43,20 +76,132 @@
   @media (prefers-reduced-motion:reduce){
     *{transition:none !important; animation:none !important;}
   }
-  .wrap{width:100%; max-width:460px; padding:20px 16px 40px;}
+  .wrap{
+    width:100%;
+    max-width:460px;
+    padding:20px 16px 40px;
+    padding-top:max(20px, env(safe-area-inset-top));
+  }
 
   h1{
     font-size:19px;
     font-weight:700;
-    margin:4px 0 16px;
+    margin:0;
     letter-spacing:-0.01em;
+    line-height:1.25;
+    color:var(--ink);
+    min-width:0;
+    flex:1 1 auto;
   }
+  .top-bar{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:16px;
+  }
+
+  /* Banners de estado (sin conexión / instalar app) */
+  .banner{
+    display:block;
+    width:100%;
+    box-sizing:border-box;
+    min-height:44px;
+    padding:10px 14px;
+    border-radius:8px;
+    font-family:'Archivo',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:12px;
+    text-align:center;
+    border:1px solid var(--border);
+    cursor:default;
+  }
+  .offline-banner{
+    background:rgba(239,100,97,0.10);
+    border-color:rgba(239,100,97,0.35);
+    color:var(--danger);
+  }
+  .install-banner{
+    background:var(--result-bg);
+    border-color:var(--result-border);
+    color:var(--amber-bright);
+    cursor:pointer;
+  }
+  .install-banner:hover{background:rgba(46,196,182,0.16);}
+  .install-banner:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
+
+  /* Toast de "Deshacer" tras Limpiar */
+  .privacy-note{
+    font-size:11px;
+    color:var(--ink-dim);
+    text-align:center;
+    line-height:1.5;
+    margin:24px 4px 0;
+    opacity:0.8;
+  }
+
+  .toast{
+    position:fixed;
+    left:12px;
+    right:12px;
+    bottom:calc(12px + env(safe-area-inset-bottom, 0px));
+    max-width:428px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:12px 14px;
+    box-shadow:0 14px 30px -10px rgba(0,0,0,0.6);
+    font-family:'Archivo',sans-serif;
+    font-size:13px;
+    color:var(--ink-dim);
+    z-index:25;
+    opacity:0;
+    transform:translateY(12px);
+    pointer-events:none;
+    transition:opacity .18s ease, transform .18s ease;
+  }
+  .toast.visible{opacity:1; transform:translateY(0); pointer-events:auto;}
+  #undo-btn{
+    background:none;
+    border:none;
+    color:var(--amber-bright);
+    font-family:'Archivo',sans-serif;
+    font-size:13px;
+    font-weight:700;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  #undo-btn:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
+
+  /* Botón de intercambiar valores (modo ¿Qué % fue?) */
+  .swap-btn{
+    display:block;
+    width:100%;
+    min-height:40px;
+    margin:-4px 0 14px;
+    background:none;
+    border:1px dashed var(--border);
+    border-radius:8px;
+    color:var(--ink-dim);
+    font-family:'Archivo',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .swap-btn:hover{border-color:var(--amber); color:var(--amber-bright);}
+  .swap-btn:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
 
   /* Tabs: grid grande, 2x2, para que cada botón sea un blanco fácil de tocar */
   .tabs{
     display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:6px;
     margin-bottom:14px;
   }
   .tab-btn{
@@ -67,7 +212,8 @@
     color:var(--ink-dim);
     font-family:'Archivo',sans-serif;
     font-weight:700;
-    font-size:14px;
+    font-size:12px;
+    padding:4px 2px;
     cursor:pointer;
   }
   .tab-btn.active{
@@ -76,6 +222,34 @@
     color:var(--on-accent);
   }
   .tab-btn:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
+  .tab-btn.tab-wide{grid-column:1 / -1;}
+
+  /* Toggles de accesibilidad: chicos y discretos, no compiten con las tabs */
+  .a11y-row{display:flex; gap:6px; flex-shrink:0;}
+  .a11y-btn{
+    width:34px;
+    height:34px;
+    min-height:34px;
+    padding:0;
+    background:none;
+    border:1px solid var(--border);
+    border-radius:8px;
+    color:var(--ink-dim);
+    font-family:'Archivo',sans-serif;
+    font-size:13px;
+    font-weight:700;
+    line-height:1;
+    cursor:pointer;
+    opacity:0.75;
+  }
+  .a11y-btn:hover{opacity:1;}
+  .a11y-btn.active{
+    background:rgba(46,196,182,0.14);
+    border-color:var(--amber);
+    color:var(--amber-bright);
+    opacity:1;
+  }
+  .a11y-btn:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
 
   .panel{display:none;}
   .panel.active{display:block;}
@@ -144,6 +318,50 @@
     color:var(--on-accent);
   }
   .segment button:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
+  .segment.segment-wrap{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+  }
+  .segment.segment-wrap button{min-width:0;}
+
+  /* Botón principal (Aplicar %), separado y destacado antes del resto de modos */
+  .mode-btn-standalone{
+    display:block;
+    width:100%;
+    min-height:50px;
+    margin-bottom:10px;
+    background:rgba(46,196,182,0.12);
+    border:1px solid var(--amber);
+    border-radius:8px;
+    color:var(--amber-bright);
+    font-family:'Archivo',sans-serif;
+    font-weight:800;
+    font-size:15px;
+    cursor:pointer;
+  }
+  .mode-btn-standalone.active{
+    background:var(--amber);
+    color:var(--on-accent);
+  }
+  .mode-btn-standalone:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
+
+  .link-toggle{
+    display:block;
+    background:none;
+    border:none;
+    color:var(--ink-dim);
+    font-family:'Archivo',sans-serif;
+    font-size:13px;
+    font-weight:600;
+    text-decoration:underline;
+    text-underline-offset:2px;
+    cursor:pointer;
+    padding:0;
+    margin-bottom:14px;
+  }
+  .link-toggle:hover{color:var(--amber-bright);}
+  .link-toggle:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
+  #precios-mode-switcher{margin-bottom:2px;}
 
   label{
     display:block;
@@ -239,13 +457,53 @@
   }
   .step-btn:hover{border-color:var(--amber); color:var(--amber-bright);}
   .step-btn:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
-  .step-value{
+  .stepper input.step-value{
     flex:1;
+    min-height:auto;
     text-align:center;
+    background:none;
+    border:none;
+    padding:0;
+    color:var(--ink);
     font-family:'JetBrains Mono',monospace;
     font-size:20px;
     font-weight:700;
   }
+  .stepper input.step-value:focus{
+    outline:2px solid var(--amber-bright);
+    outline-offset:3px;
+    border-radius:6px;
+  }
+
+  /* Prefijo $ dentro de los campos de plata */
+  .input-money{position:relative;}
+  .input-money .prefix{
+    position:absolute;
+    left:14px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--ink-dim);
+    font-family:'JetBrains Mono',monospace;
+    font-size:18px;
+    font-weight:600;
+    pointer-events:none;
+  }
+  .input-money input{padding-left:28px;}
+
+  /* Sufijo % dentro de los campos de porcentaje */
+  .input-percent{position:relative;}
+  .input-percent .suffix{
+    position:absolute;
+    right:14px;
+    top:50%;
+    transform:translateY(-50%);
+    color:var(--ink-dim);
+    font-family:'JetBrains Mono',monospace;
+    font-size:18px;
+    font-weight:600;
+    pointer-events:none;
+  }
+  .input-percent input{padding-right:30px;}
 
   /* Cadena: filas de pasos */
   .chain-row{
@@ -292,6 +550,18 @@
     padding:0 10px;
     font-size:15px;
   }
+  .chain-row .chain-pct-wrap{
+    flex:1;
+    min-width:0;
+  }
+  .chain-row .chain-pct-wrap .suffix{
+    right:10px;
+    font-size:14px;
+  }
+  .chain-row .chain-pct-wrap input{
+    width:100%;
+    padding-right:26px;
+  }
   .chain-row .chain-remove{
     width:40px;
     height:40px;
@@ -328,6 +598,10 @@
     text-align:center;
     padding:6px 0;
   }
+  .result-empty.result-warning{
+    color:var(--danger);
+    font-weight:600;
+  }
   .result-row{
     display:flex;
     justify-content:space-between;
@@ -337,6 +611,16 @@
     border-bottom:1px solid var(--border);
   }
   .result-row:last-of-type{border-bottom:none;}
+  .result-row.copyable{
+    cursor:pointer;
+    margin:0 -8px;
+    padding:7px 8px;
+    border-radius:6px;
+  }
+  .result-row.copyable:hover{background:rgba(255,255,255,0.04);}
+  .result-row.copyable:active{background:rgba(46,196,182,0.10);}
+  .result-row.row-copied{background:rgba(94,203,130,0.14);}
+  .result-row.row-copied span:last-child{color:var(--good);}
   .result-row span:first-child{color:var(--ink-dim);}
   .result-row span:last-child{
     font-family:'JetBrains Mono',monospace;
@@ -395,30 +679,70 @@
     font-weight:700;
     font-size:14px;
     cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+  }
+  .actions button svg{flex-shrink:0;}
+  .btn-image{
+    flex:0 0 46px;
+    width:46px;
+    padding:0;
   }
   .btn-copy{
     background:var(--amber);
     border:1px solid var(--amber);
     color:var(--on-accent);
   }
-  .btn-copy.copied{background:var(--good); border-color:var(--good); color:var(--on-accent);}
   .btn-secondary{
     background:none;
     border:1px solid var(--border);
     color:var(--ink-dim);
   }
+  .actions button.copied{background:var(--good); border-color:var(--good); color:var(--on-accent);}
   .actions button:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
+
+  /* Texto grande: mismos componentes, tipografía más grande donde más importa */
+  html.a11y-large h1{font-size:22px;}
+  html.a11y-large label{font-size:14px;}
+  html.a11y-large input[type=text], html.a11y-large select{font-size:20px;}
+  html.a11y-large .chip{font-size:14px; min-height:44px;}
+  html.a11y-large .tab-btn{font-size:15px;}
+  html.a11y-large .op-row button, html.a11y-large .segment button{font-size:15px;}
+  html.a11y-large .result-row{font-size:16px;}
+  html.a11y-large .result-hero .lbl{font-size:14px;}
+  html.a11y-large .result-hero .val{font-size:34px;}
+  html.a11y-large .hint{font-size:14px;}
+  html.a11y-large .actions button{font-size:15px;}
+  html.a11y-large .a11y-btn{font-size:13px;}
 </style>
 </head>
-<body>
-<div class="wrap">
-  <h1>Calculadora · Porcentajes y medidas</h1>
+<body style="background:var(--bg);">
+<div class="wrap" style="background:var(--bg);">
+  <div class="top-bar">
+    <h1>Calculadora · Todo en uno</h1>
+    <div class="a11y-row">
+      <button type="button" class="a11y-btn" id="a11y-large-btn" title="Texto grande" aria-label="Activar texto grande">Aa</button>
+      <button type="button" class="a11y-btn" id="a11y-contrast-btn" title="Alto contraste" aria-label="Activar alto contraste">◐</button>
+      <button type="button" class="a11y-btn" id="theme-light-btn" title="Modo claro" aria-label="Activar modo claro">☀</button>
+    </div>
+  </div>
+
+  <div class="banner offline-banner" id="offline-banner" style="display:none;">
+    Estás sin conexión — la calculadora sigue funcionando igual.
+  </div>
+  <button type="button" class="banner install-banner" id="install-btn" style="display:none;">
+    ⤓ Instalar app
+  </button>
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="precios">Precios</button>
+    <button class="tab-btn" data-tab="dolar">Dólar</button>
     <button class="tab-btn" data-tab="medidas">Medidas</button>
     <button class="tab-btn" data-tab="propina">Propina</button>
     <button class="tab-btn" data-tab="regla3">Regla de 3</button>
+    <button class="tab-btn" data-tab="talles">Talles</button>
   </div>
 
   <!-- PRECIOS -->
@@ -426,17 +750,27 @@
     <div class="card">
       <div class="card-header"><h2>Precios</h2><button type="button" class="clear-btn" data-clear="precios">Limpiar</button></div>
 
-      <div class="segment">
-        <button class="mode-btn active" data-mode="directo">Aplicar %</button>
-        <button class="mode-btn" data-mode="reverso">¿Qué % fue?</button>
-        <button class="mode-btn" data-mode="cadena">Encadenado</button>
+      <button type="button" class="link-toggle" id="precios-more-toggle">Más formas de calcular ▾</button>
+
+      <div id="precios-mode-switcher" style="display:none;">
+        <button class="mode-btn mode-btn-standalone active" data-mode="directo">Aplicar %</button>
+
+        <div class="segment segment-wrap">
+          <button class="mode-btn" data-mode="reverso">¿Qué % fue?</button>
+          <button class="mode-btn" data-mode="cadena">Encadenado</button>
+          <button class="mode-btn" data-mode="tabla">Tabla</button>
+          <button class="mode-btn" data-mode="comparar">Comparar</button>
+        </div>
       </div>
 
       <!-- Modo directo -->
       <div id="mode-directo">
         <div class="field">
           <label for="p-precio">Precio original</label>
-          <input type="text" id="p-precio" inputmode="decimal" placeholder="0" value="1000">
+          <div class="input-money">
+            <span class="prefix">$</span>
+            <input type="text" id="p-precio" inputmode="decimal" enterkeyhint="next" placeholder="0" value="1000">
+          </div>
         </div>
         <div class="op-row">
           <button class="op-btn active" data-op="descuento">Descuento</button>
@@ -444,7 +778,10 @@
         </div>
         <div class="field">
           <label for="p-pct">Porcentaje</label>
-          <input type="text" id="p-pct" inputmode="decimal" placeholder="0" value="20">
+          <div class="input-percent">
+            <input type="text" id="p-pct" inputmode="decimal" enterkeyhint="next" placeholder="0" value="20">
+            <span class="suffix">%</span>
+          </div>
         </div>
         <div class="chips" id="pct-chips">
           <button class="chip" data-val="5">5%</button>
@@ -461,11 +798,18 @@
       <div id="mode-reverso" style="display:none;">
         <div class="field">
           <label for="p-precio2">Precio original</label>
-          <input type="text" id="p-precio2" inputmode="decimal" placeholder="0" value="1000">
+          <div class="input-money">
+            <span class="prefix">$</span>
+            <input type="text" id="p-precio2" inputmode="decimal" enterkeyhint="next" placeholder="0" value="1000">
+          </div>
         </div>
+        <button type="button" class="swap-btn" id="swap-reverso" title="Intercambiar los dos valores">⇅ Intercambiar</button>
         <div class="field">
           <label for="p-final2">Precio final</label>
-          <input type="text" id="p-final2" inputmode="decimal" placeholder="0" value="800">
+          <div class="input-money">
+            <span class="prefix">$</span>
+            <input type="text" id="p-final2" inputmode="decimal" enterkeyhint="next" placeholder="0" value="800">
+          </div>
         </div>
       </div>
 
@@ -473,16 +817,68 @@
       <div id="mode-cadena" style="display:none;">
         <div class="field">
           <label for="p-precio3">Precio original</label>
-          <input type="text" id="p-precio3" inputmode="decimal" placeholder="0" value="1000">
+          <div class="input-money">
+            <span class="prefix">$</span>
+            <input type="text" id="p-precio3" inputmode="decimal" enterkeyhint="next" placeholder="0" value="1000">
+          </div>
         </div>
         <div id="chain-steps"></div>
         <button type="button" class="chip add-step" id="chain-add">+ Agregar paso</button>
         <p class="hint">Cada % se aplica sobre el precio que dejó el paso anterior.</p>
       </div>
 
-      <div class="result" id="receipt-precios"></div>
+      <!-- Modo tabla -->
+      <div id="mode-tabla" style="display:none;">
+        <div class="field">
+          <label for="p-precio-tabla">Precio original</label>
+          <div class="input-money">
+            <span class="prefix">$</span>
+            <input type="text" id="p-precio-tabla" inputmode="decimal" enterkeyhint="done" placeholder="0" value="1000">
+          </div>
+        </div>
+        <p class="hint">Precio final aplicando distintos descuentos, para armar una lista rebajada de una sola vez.</p>
+      </div>
+
+      <!-- Modo comparar -->
+      <div id="mode-comparar" style="display:none;">
+        <div class="field">
+          <label for="p-precio-comp">Precio original</label>
+          <div class="input-money">
+            <span class="prefix">$</span>
+            <input type="text" id="p-precio-comp" inputmode="decimal" enterkeyhint="next" placeholder="0" value="1000">
+          </div>
+        </div>
+
+        <label style="margin-bottom:6px;">Escenario A</label>
+        <div class="op-row">
+          <button class="op-btn-a active" data-op="descuento">Descuento</button>
+          <button class="op-btn-a" data-op="aumento">Aumento</button>
+        </div>
+        <div class="field">
+          <div class="input-percent">
+            <input type="text" id="p-pct-a" inputmode="decimal" enterkeyhint="next" placeholder="0" value="20">
+            <span class="suffix">%</span>
+          </div>
+        </div>
+
+        <label style="margin-bottom:6px;">Escenario B</label>
+        <div class="op-row">
+          <button class="op-btn-b active" data-op="descuento">Descuento</button>
+          <button class="op-btn-b" data-op="aumento">Aumento</button>
+        </div>
+        <div class="field">
+          <div class="input-percent">
+            <input type="text" id="p-pct-b" inputmode="decimal" enterkeyhint="done" placeholder="0" value="25">
+            <span class="suffix">%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="result" id="receipt-precios" aria-live="polite" aria-atomic="true"></div>
       <div class="actions">
-        <button type="button" class="btn-secondary" id="copy-precios">Copiar</button>
+        <button type="button" class="btn-copy" id="share-precios"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Compartir</button>
+        <button type="button" class="btn-secondary btn-image" id="image-precios" title="Compartir como imagen" aria-label="Compartir como imagen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+        <button type="button" class="btn-secondary" id="copy-precios"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
       </div>
     </div>
   </section>
@@ -493,7 +889,7 @@
       <div class="card-header"><h2>Medidas</h2><button type="button" class="clear-btn" data-clear="medidas">Limpiar</button></div>
       <div class="field">
         <label for="m-valor">Valor</label>
-        <input type="text" id="m-valor" inputmode="decimal" placeholder="0" value="150">
+        <input type="text" id="m-valor" inputmode="decimal" enterkeyhint="next" placeholder="0" value="150">
       </div>
       <div class="field">
         <label for="m-unidad">Unidad</label>
@@ -507,9 +903,12 @@
         </select>
       </div>
 
-      <div class="result" id="receipt-medidas"></div>
+      <div class="result" id="receipt-medidas" aria-live="polite" aria-atomic="true"></div>
+      <p class="hint">Tocá una fila para copiar solo ese valor.</p>
       <div class="actions">
-        <button type="button" class="btn-secondary" id="copy-medidas">Copiar</button>
+        <button type="button" class="btn-copy" id="share-medidas"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Compartir</button>
+        <button type="button" class="btn-secondary btn-image" id="image-medidas" title="Compartir como imagen" aria-label="Compartir como imagen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+        <button type="button" class="btn-secondary" id="copy-medidas"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar todo</button>
       </div>
     </div>
   </section>
@@ -520,11 +919,17 @@
       <div class="card-header"><h2>Propina</h2><button type="button" class="clear-btn" data-clear="propina">Limpiar</button></div>
       <div class="field">
         <label for="pr-total">Total de la cuenta</label>
-        <input type="text" id="pr-total" inputmode="decimal" placeholder="0" value="15000">
+        <div class="input-money">
+          <span class="prefix">$</span>
+          <input type="text" id="pr-total" inputmode="decimal" enterkeyhint="next" placeholder="0" value="15000">
+        </div>
       </div>
       <div class="field">
         <label for="pr-pct">Propina</label>
-        <input type="text" id="pr-pct" inputmode="decimal" placeholder="0" value="10">
+        <div class="input-percent">
+          <input type="text" id="pr-pct" inputmode="decimal" enterkeyhint="next" placeholder="0" value="10">
+          <span class="suffix">%</span>
+        </div>
       </div>
       <div class="chips" id="propina-chips" style="margin-bottom:14px;">
         <button class="chip" data-val="0">Sin propina</button>
@@ -533,17 +938,19 @@
         <button class="chip" data-val="20">20%</button>
       </div>
       <div class="field">
-        <label>Cantidad de personas</label>
+        <label for="pr-personas-display">Cantidad de personas</label>
         <div class="stepper">
           <button type="button" class="step-btn" id="pr-minus">−</button>
-          <div class="step-value" id="pr-personas-display">4</div>
+          <input type="text" class="step-value" id="pr-personas-display" inputmode="numeric" enterkeyhint="next" value="4">
           <button type="button" class="step-btn" id="pr-plus">+</button>
         </div>
       </div>
 
-      <div class="result" id="receipt-propina"></div>
+      <div class="result" id="receipt-propina" aria-live="polite" aria-atomic="true"></div>
       <div class="actions">
-        <button type="button" class="btn-secondary" id="copy-propina">Copiar</button>
+        <button type="button" class="btn-copy" id="share-propina"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Compartir</button>
+        <button type="button" class="btn-secondary btn-image" id="image-propina" title="Compartir como imagen" aria-label="Compartir como imagen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+        <button type="button" class="btn-secondary" id="copy-propina"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
       </div>
     </div>
   </section>
@@ -560,48 +967,248 @@
 
       <div class="field">
         <label for="r3-a">Cantidad conocida</label>
-        <input type="text" id="r3-a" inputmode="decimal" placeholder="0" value="3">
+        <input type="text" id="r3-a" inputmode="decimal" enterkeyhint="next" placeholder="0" value="3">
       </div>
       <div class="field">
         <label for="r3-b">Equivale a</label>
-        <input type="text" id="r3-b" inputmode="decimal" placeholder="0" value="500">
+        <input type="text" id="r3-b" inputmode="decimal" enterkeyhint="next" placeholder="0" value="500">
       </div>
       <div class="field">
         <label for="r3-c">Nueva cantidad</label>
-        <input type="text" id="r3-c" inputmode="decimal" placeholder="0" value="7">
+        <input type="text" id="r3-c" inputmode="decimal" enterkeyhint="next" placeholder="0" value="7">
       </div>
       <p class="hint" id="r3-hint">Directa: a más cantidad, más valor. Inversa: a más cantidad, menos valor.</p>
 
-      <div class="result" id="receipt-regla3"></div>
+      <div class="result" id="receipt-regla3" aria-live="polite" aria-atomic="true"></div>
       <div class="actions">
-        <button type="button" class="btn-secondary" id="copy-regla3">Copiar</button>
+        <button type="button" class="btn-copy" id="share-regla3"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Compartir</button>
+        <button type="button" class="btn-secondary btn-image" id="image-regla3" title="Compartir como imagen" aria-label="Compartir como imagen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+        <button type="button" class="btn-secondary" id="copy-regla3"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
       </div>
     </div>
   </section>
+
+  <!-- DÓLAR -->
+  <section class="panel" id="panel-dolar">
+    <div class="card">
+      <div class="card-header"><h2>Dólar</h2><button type="button" class="clear-btn" id="dolar-refresh">Actualizar</button></div>
+
+      <div class="result" id="dolar-rates">
+        <div class="result-empty">Tocá la pestaña para cargar la cotización.</div>
+      </div>
+      <p class="hint" id="dolar-updated"></p>
+
+      <div class="field" style="margin-top:16px;">
+        <label for="dolar-monto">Monto</label>
+        <input type="text" id="dolar-monto" inputmode="decimal" enterkeyhint="next" placeholder="0" value="100">
+      </div>
+      <div class="field">
+        <label for="dolar-casa">Tipo de dólar</label>
+        <select id="dolar-casa"><option>Cargando…</option></select>
+      </div>
+      <div class="segment">
+        <button type="button" class="dolar-dir-btn active" data-dir="ars-usd">ARS → USD</button>
+        <button type="button" class="dolar-dir-btn" data-dir="usd-ars">USD → ARS</button>
+      </div>
+
+      <div class="result" id="receipt-dolar" aria-live="polite" aria-atomic="true"></div>
+      <div class="actions">
+        <button type="button" class="btn-copy" id="share-dolar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Compartir</button>
+        <button type="button" class="btn-secondary btn-image" id="image-dolar" title="Compartir como imagen" aria-label="Compartir como imagen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+        <button type="button" class="btn-secondary" id="copy-dolar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- TALLES -->
+  <section class="panel" id="panel-talles">
+    <div class="card">
+      <div class="card-header"><h2>Talles</h2></div>
+
+      <div class="field">
+        <label for="talle-sistema">Tengo el talle en</label>
+        <select id="talle-sistema">
+          <option value="arg">Argentina</option>
+          <option value="us">Estados Unidos (US)</option>
+          <option value="uk">Reino Unido (UK)</option>
+          <option value="eu">Europa (EU)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="talle-valor">Talle</label>
+        <select id="talle-valor"></select>
+      </div>
+
+      <div class="result" id="receipt-talles" aria-live="polite" aria-atomic="true"></div>
+      <p class="hint">Tabla orientativa de indumentaria (mujer, talles numéricos). Cada marca puede variar levemente.</p>
+      <div class="actions">
+        <button type="button" class="btn-copy" id="share-talles"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Compartir</button>
+        <button type="button" class="btn-secondary btn-image" id="image-talles" title="Compartir como imagen" aria-label="Compartir como imagen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
+        <button type="button" class="btn-secondary" id="copy-talles"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Copiar</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="privacy-note">🔒 Los cálculos se hacen en tu propio celular; nada se envía a ningún servidor. La única excepción es la pestaña Dólar, que consulta la cotización a dolarapi.com para mostrarte un valor actualizado.</p>
+</div>
+
+<div class="toast" id="undo-toast">
+  <span>Se borró</span>
+  <button type="button" id="undo-btn">Deshacer</button>
 </div>
 
 <script>
+  // ---------- Accesibilidad (persistido en este navegador) ----------
+  // No hay cuentas ni login en esta herramienta (es un sitio estático,
+  // sin servidor), así que "guardado en la cuenta" se traduce en guardarlo
+  // en el localStorage de este navegador/celular. Si la persona lo abre
+  // desde otro dispositivo o borra los datos del navegador, se resetea.
+  const A11Y_LARGE_KEY = 'calc_a11y_large';
+  const A11Y_CONTRAST_KEY = 'calc_a11y_contrast';
+  const A11Y_LIGHT_KEY = 'calc_a11y_light';
+  const a11yLargeBtn = document.getElementById('a11y-large-btn');
+  const a11yContrastBtn = document.getElementById('a11y-contrast-btn');
+  const themeLightBtn = document.getElementById('theme-light-btn');
+
+  function readA11yPref(key){
+    try{ return localStorage.getItem(key) === '1'; }
+    catch(e){ return false; } // modo privado o storage bloqueado: no rompe nada
+  }
+  function writeA11yPref(key, value){
+    try{ localStorage.setItem(key, value ? '1' : '0'); }
+    catch(e){ /* si no se puede guardar, el toggle sigue funcionando en esta sesión */ }
+  }
+  function syncA11yButtons(){
+    a11yLargeBtn.classList.toggle('active', document.documentElement.classList.contains('a11y-large'));
+    a11yContrastBtn.classList.toggle('active', document.documentElement.classList.contains('a11y-contrast'));
+    themeLightBtn.classList.toggle('active', document.documentElement.classList.contains('a11y-light'));
+  }
+  // Actualiza los metadatos del navegador/PWA (barra de estado, tilde de
+  // "modo oscuro") para que coincidan con el tema realmente activo.
+  function syncThemeMeta(){
+    const isLight = document.documentElement.classList.contains('a11y-light');
+    const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+    if (colorSchemeMeta) colorSchemeMeta.setAttribute('content', isLight ? 'light' : 'dark');
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeColorMeta) themeColorMeta.setAttribute('content', isLight ? '#eef1f5' : '#10141c');
+  }
+
+  if (readA11yPref(A11Y_LARGE_KEY)) document.documentElement.classList.add('a11y-large');
+  // Alto contraste y modo claro son mutuamente excluyentes (son dos temas
+  // distintos); si por algún motivo quedaron los dos guardados, gana el
+  // que se haya activado más recientemente... acá simplemente priorizamos
+  // alto contraste para no romper con configuraciones previas.
+  if (readA11yPref(A11Y_CONTRAST_KEY)){
+    document.documentElement.classList.add('a11y-contrast');
+  } else if (readA11yPref(A11Y_LIGHT_KEY)){
+    document.documentElement.classList.add('a11y-light');
+  }
+  syncA11yButtons();
+  syncThemeMeta();
+
+  a11yLargeBtn.addEventListener('click', () => {
+    document.documentElement.classList.toggle('a11y-large');
+    writeA11yPref(A11Y_LARGE_KEY, document.documentElement.classList.contains('a11y-large'));
+    syncA11yButtons();
+  });
+  a11yContrastBtn.addEventListener('click', () => {
+    document.documentElement.classList.toggle('a11y-contrast');
+    const isContrast = document.documentElement.classList.contains('a11y-contrast');
+    if (isContrast){
+      document.documentElement.classList.remove('a11y-light');
+      writeA11yPref(A11Y_LIGHT_KEY, false);
+    }
+    writeA11yPref(A11Y_CONTRAST_KEY, isContrast);
+    syncA11yButtons();
+    syncThemeMeta();
+  });
+  themeLightBtn.addEventListener('click', () => {
+    document.documentElement.classList.toggle('a11y-light');
+    const isLight = document.documentElement.classList.contains('a11y-light');
+    if (isLight){
+      document.documentElement.classList.remove('a11y-contrast');
+      writeA11yPref(A11Y_CONTRAST_KEY, false);
+    }
+    writeA11yPref(A11Y_LIGHT_KEY, isLight);
+    syncA11yButtons();
+    syncThemeMeta();
+  });
+
+  // ---------- Instalar app ----------
+  // Captura el evento nativo del navegador para ofrecer un botón propio
+  // en vez de depender de que la persona encuentre la opción en el menú.
+  let deferredInstallPrompt = null;
+  const installBtn = document.getElementById('install-btn');
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    installBtn.style.display = 'block';
+  });
+  installBtn.addEventListener('click', async () => {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    installBtn.style.display = 'none';
+  });
+  window.addEventListener('appinstalled', () => {
+    installBtn.style.display = 'none';
+    deferredInstallPrompt = null;
+  });
+
+  // ---------- Indicador de sin conexión ----------
+  const offlineBanner = document.getElementById('offline-banner');
+  function updateOnlineStatus(){
+    offlineBanner.style.display = navigator.onLine ? 'none' : 'block';
+  }
+  window.addEventListener('online', updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
+
+  // ---------- Vibración táctil ----------
+  // Un empujoncito breve al tocar controles clave. navigator.vibrate no
+  // existe en iOS Safari, así que ahí simplemente no hace nada (no rompe).
+  function buzz(ms){
+    if (navigator.vibrate) navigator.vibrate(ms || 12);
+  }
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('.tab-btn, .mode-btn, .op-btn, .op-btn-a, .op-btn-b, .chain-op-btn, .chip, .r3-mode-btn, .step-btn, .clear-btn, .chain-remove, .result-row.copyable, .swap-btn, .a11y-btn, .dolar-dir-btn, .link-toggle')){
+      buzz();
+    }
+  });
+
   // ---------- Tabs ----------
   const tabBtns = document.querySelectorAll('.tab-btn');
   const panels = {
     precios: document.getElementById('panel-precios'),
     medidas: document.getElementById('panel-medidas'),
     propina: document.getElementById('panel-propina'),
-    regla3: document.getElementById('panel-regla3')
+    regla3: document.getElementById('panel-regla3'),
+    dolar: document.getElementById('panel-dolar'),
+    talles: document.getElementById('panel-talles')
   };
+  const LAST_TAB_KEY = 'calc_last_tab';
+
+  function activateTab(tabName){
+    if (!panels[tabName]) tabName = 'precios';
+    tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
+    Object.entries(panels).forEach(([name, p]) => p.classList.toggle('active', name === tabName));
+    if (tabName === 'dolar' && !dolarData){
+      fetchDolar();
+    }
+    try{ localStorage.setItem(LAST_TAB_KEY, tabName); }catch(e){ /* sin storage disponible, no rompe nada */ }
+  }
+
   tabBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      tabBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      Object.values(panels).forEach(p => p.classList.remove('active'));
-      panels[btn.dataset.tab].classList.add('active');
-    });
+    btn.addEventListener('click', () => activateTab(btn.dataset.tab));
   });
 
   // ---------- Formato ----------
   function parseNum(v){
     if (v === null || v === undefined) return NaN;
-    const s = String(v).trim().replace(',', '.');
+    // El punto es separador de miles (se descarta) y la coma es el decimal,
+    // igual que en el resto de la calculadora (formato es-AR).
+    let s = String(v).trim().replace(/\./g, '').replace(',', '.');
     if (s === '' || s === '-') return NaN;
     return parseFloat(s);
   }
@@ -609,12 +1216,63 @@
     if (isNaN(n) || !isFinite(n)) return '—';
     return n.toLocaleString('es-AR', {minimumFractionDigits:2, maximumFractionDigits:2});
   }
+
+  // ---------- Separadores de miles mientras se escribe ----------
+  // Regla fija en toda la calculadora: el punto SIEMPRE es separador de
+  // miles y la coma es el decimal (formato es-AR), para que no haya
+  // ambigüedad entre "1.500" (mil quinientos) y "1,5" (uno con cinco).
+  function formatThousands(raw){
+    let value = String(raw).trim();
+    let negative = false;
+    if (value.startsWith('-')){ negative = true; value = value.slice(1); }
+    value = value.replace(/\./g, '');
+    const commaIndex = value.indexOf(',');
+    let intPart, decPart = null, hadComma = false;
+    if (commaIndex !== -1){
+      hadComma = true;
+      intPart = value.slice(0, commaIndex).replace(/[^\d]/g, '');
+      decPart = value.slice(commaIndex + 1).replace(/[^\d]/g, '').slice(0, 2);
+    } else {
+      intPart = value.replace(/[^\d]/g, '');
+    }
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    let formatted = intPart;
+    if (hadComma) formatted += ',' + (decPart || '');
+    if (negative && formatted !== '') formatted = '-' + formatted;
+    return formatted;
+  }
+
+  function reformatWithCursor(input){
+    const oldValue = input.value;
+    const oldCursor = input.selectionStart;
+    const relevantBefore = oldValue.slice(0, oldCursor).replace(/[^\d,\-]/g, '').length;
+    const newValue = formatThousands(oldValue);
+    if (newValue === oldValue) return;
+    let count = 0, newCursor = newValue.length;
+    for (let i = 0; i < newValue.length; i++){
+      if (/[\d,\-]/.test(newValue[i])) count++;
+      if (count === relevantBefore){ newCursor = i + 1; break; }
+    }
+    input.value = newValue;
+    input.setSelectionRange(newCursor, newCursor);
+  }
+
+  function attachThousandsFormatting(id){
+    const input = document.getElementById(id);
+    input.addEventListener('input', () => reformatWithCursor(input));
+    input.value = formatThousands(input.value); // normaliza el valor inicial
+  }
+  ['p-precio','p-precio2','p-final2','p-precio3','p-precio-tabla','p-precio-comp','pr-total'].forEach(attachThousandsFormatting);
+
   function fmtNum(n, decimals){
     if (isNaN(n) || !isFinite(n)) return '—';
     return n.toLocaleString('es-AR', {minimumFractionDigits:0, maximumFractionDigits: decimals});
   }
   function emptyResult(msg){
     return `<div class="result-empty">${msg}</div>`;
+  }
+  function warningResult(msg){
+    return `<div class="result-empty result-warning">⚠ ${msg}</div>`;
   }
   function setTone(el, tone){
     el.classList.remove('tone-good','tone-bad');
@@ -629,32 +1287,189 @@
   }
 
   // ---------- Copiar ----------
-  async function copyText(text, btn){
-    if (!text) return;
+  async function writeClipboard(text){
     try{
       await navigator.clipboard.writeText(text);
+      return true;
     }catch(e){
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.style.position = 'fixed';
-      ta.style.opacity = '0';
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
+      try{
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        return true;
+      }catch(e2){
+        return false;
+      }
     }
-    const original = btn.textContent;
+  }
+
+  async function copyText(text, btn){
+    if (!text) return;
+    await writeClipboard(text);
+    buzz(20);
+    const original = btn.innerHTML;
     btn.textContent = 'Copiado ✓';
     btn.classList.add('copied');
     setTimeout(() => {
-      btn.textContent = original;
+      btn.innerHTML = original;
       btn.classList.remove('copied');
     }, 1300);
+  }
+
+  async function copyRow(row, text){
+    if (!text) return;
+    await writeClipboard(text);
+    buzz(20);
+    const valueEl = row.querySelector('span:last-child');
+    const original = valueEl.textContent;
+    valueEl.textContent = 'Copiado ✓';
+    row.classList.add('row-copied');
+    setTimeout(() => {
+      valueEl.textContent = original;
+      row.classList.remove('row-copied');
+    }, 900);
+  }
+
+  async function shareText(text, btn){
+    if (!text) return;
+    if (navigator.share){
+      buzz();
+      try{
+        await navigator.share({ text });
+      }catch(e){
+        // el usuario canceló el panel de compartir o falló: no hacemos nada más
+      }
+    } else {
+      // sin Web Share API (ej. desktop): compartir se comporta como copiar
+      await copyText(text, btn);
+    }
+  }
+
+  // ---------- Compartir como imagen ----------
+  // Reutiliza el mismo texto que ya arma cada calculadora (lastXText):
+  // cada línea se dibuja como una fila, y la última línea (el resultado
+  // final) se destaca más grande, sin tener que repetir la lógica de
+  // armado por cada pestaña.
+  function buildResultImage(title, textBlock){
+    const lines = textBlock.split('\n').map(l => l.trim()).filter(Boolean);
+    if (lines.length === 0) return null;
+    const bodyLines = lines.slice(0, -1);
+    const heroLine = lines[lines.length - 1];
+
+    const width = 720;
+    const paddingX = 40;
+    const lineHeight = 40;
+    const headerHeight = 88;
+    const heroBlock = 100;
+    const footerHeight = 46;
+    const height = headerHeight + bodyLines.length * lineHeight + heroBlock + footerHeight;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    ctx.fillStyle = '#10141c';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#eef1f6';
+    ctx.font = '700 25px Arial, sans-serif';
+    ctx.fillText(title, paddingX, 46);
+
+    ctx.strokeStyle = '#262d3d';
+    ctx.beginPath();
+    ctx.moveTo(paddingX, 66);
+    ctx.lineTo(width - paddingX, 66);
+    ctx.stroke();
+
+    let y = headerHeight;
+    ctx.font = '400 19px Arial, sans-serif';
+    bodyLines.forEach(line => {
+      ctx.fillStyle = '#c7cdd8';
+      ctx.fillText(line, paddingX, y);
+      y += lineHeight;
+    });
+
+    y += 36;
+    ctx.fillStyle = '#2ec4b6';
+    ctx.font = '700 32px Arial, sans-serif';
+    ctx.fillText(heroLine, paddingX, y);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#5a6478';
+    ctx.font = '400 13px Arial, sans-serif';
+    ctx.fillText('Calculadora · Todo en uno', width - paddingX, height - 20);
+
+    return canvas;
+  }
+
+  async function shareAsImage(title, text, btn){
+    if (!text) return;
+    let canvas;
+    try{
+      canvas = buildResultImage(title, text);
+    }catch(e){
+      canvas = null;
+    }
+    if (!canvas){
+      // el navegador no soporta canvas como esperábamos: compartimos el texto como red de contención
+      await shareText(text, btn);
+      return;
+    }
+    canvas.toBlob(async (blob) => {
+      if (!blob){
+        await shareText(text, btn);
+        return;
+      }
+      const filename = 'calculadora-' + title.toLowerCase().replace(/\s+/g, '-') + '.png';
+      const file = new File([blob], filename, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })){
+        buzz();
+        try{
+          await navigator.share({ files: [file] });
+          return;
+        }catch(e){
+          return; // el usuario canceló
+        }
+      }
+      // sin Web Share de archivos (ej. desktop): descarga la imagen directamente
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      buzz(20);
+    }, 'image/png');
   }
 
   // ================= PRECIOS =================
   let priceMode = 'directo';
   const modeBtns = document.querySelectorAll('.mode-btn');
+  const preciosMoreToggle = document.getElementById('precios-more-toggle');
+  const preciosModeSwitcher = document.getElementById('precios-mode-switcher');
+  let modeSwitcherOpen = false;
+
+  function updateModeSwitcherVisibility(){
+    const shouldShow = modeSwitcherOpen || priceMode !== 'directo';
+    preciosModeSwitcher.style.display = shouldShow ? 'block' : 'none';
+    preciosMoreToggle.textContent = shouldShow ? 'Ocultar otras formas de calcular ▴' : 'Más formas de calcular ▾';
+  }
+  preciosMoreToggle.addEventListener('click', () => {
+    modeSwitcherOpen = !modeSwitcherOpen;
+    updateModeSwitcherVisibility();
+  });
+  updateModeSwitcherVisibility();
+
   modeBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       modeBtns.forEach(b => b.classList.remove('active'));
@@ -663,6 +1478,9 @@
       document.getElementById('mode-directo').style.display = priceMode === 'directo' ? 'block' : 'none';
       document.getElementById('mode-reverso').style.display = priceMode === 'reverso' ? 'block' : 'none';
       document.getElementById('mode-cadena').style.display = priceMode === 'cadena' ? 'block' : 'none';
+      document.getElementById('mode-tabla').style.display = priceMode === 'tabla' ? 'block' : 'none';
+      document.getElementById('mode-comparar').style.display = priceMode === 'comparar' ? 'block' : 'none';
+      updateModeSwitcherVisibility();
       renderPrecios();
     });
   });
@@ -677,6 +1495,30 @@
     });
   });
 
+  let opA = 'descuento';
+  document.querySelectorAll('.op-btn-a').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.op-btn-a').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      opA = btn.dataset.op;
+      renderPrecios();
+    });
+  });
+
+  let opB = 'descuento';
+  document.querySelectorAll('.op-btn-b').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.op-btn-b').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      opB = btn.dataset.op;
+      renderPrecios();
+    });
+  });
+
+  ['p-precio-tabla','p-precio-comp','p-pct-a','p-pct-b'].forEach(id => {
+    document.getElementById(id).addEventListener('input', renderPrecios);
+  });
+
   document.querySelectorAll('#pct-chips .chip').forEach(chip => {
     chip.addEventListener('click', () => {
       document.getElementById('p-pct').value = chip.dataset.val;
@@ -686,6 +1528,15 @@
 
   ['p-precio','p-pct','p-precio2','p-final2','p-precio3'].forEach(id => {
     document.getElementById(id).addEventListener('input', renderPrecios);
+  });
+
+  document.getElementById('swap-reverso').addEventListener('click', () => {
+    const a = document.getElementById('p-precio2');
+    const b = document.getElementById('p-final2');
+    const tmp = a.value;
+    a.value = b.value;
+    b.value = tmp;
+    renderPrecios();
   });
 
   let chainSteps = [
@@ -702,7 +1553,10 @@
           <button type="button" class="chain-op-btn ${step.op==='descuento'?'active':''}" data-op="descuento">−</button>
           <button type="button" class="chain-op-btn ${step.op==='aumento'?'active':''}" data-op="aumento">+</button>
         </div>
-        <input type="text" class="chain-pct" inputmode="decimal" value="${isNaN(step.pct) ? '' : step.pct}" placeholder="0">
+        <div class="input-percent chain-pct-wrap">
+          <input type="text" class="chain-pct" inputmode="decimal" enterkeyhint="next" value="${isNaN(step.pct) ? '' : step.pct}" placeholder="0">
+          <span class="suffix">%</span>
+        </div>
         <button type="button" class="chain-remove" title="Quitar paso" ${chainSteps.length<=1?'style="visibility:hidden"':''}>✕</button>
       </div>
     `).join('');
@@ -742,11 +1596,84 @@
 
   function renderPrecios(){
     const el = document.getElementById('receipt-precios');
+    if (priceMode === 'tabla'){
+      const precio = parseNum(document.getElementById('p-precio-tabla').value);
+      if (isNaN(precio)){
+        el.innerHTML = emptyResult('Cargá el precio original.');
+        setTone(el, null);
+        return;
+      }
+      if (precio < 0){
+        el.innerHTML = warningResult('El precio no puede ser negativo.');
+        setTone(el, 'bad');
+        return;
+      }
+      const porcentajes = [10, 20, 30, 40, 50];
+      const rows = porcentajes.map(pct => {
+        const final = precio * (1 - pct/100);
+        return { pct, final };
+      });
+      el.innerHTML = rows.map(r => `
+        <div class="result-row"><span>-${r.pct}%</span><span>$${fmt(r.final)}</span></div>
+      `).join('');
+      setTone(el, null);
+
+      lastPreciosText = `Precio original: $${fmt(precio)}\n` + rows.map(r => `-${r.pct}%: $${fmt(r.final)}`).join('\n');
+      return;
+    }
+    if (priceMode === 'comparar'){
+      const precio = parseNum(document.getElementById('p-precio-comp').value);
+      const pctA = parseNum(document.getElementById('p-pct-a').value);
+      const pctB = parseNum(document.getElementById('p-pct-b').value);
+      if (isNaN(precio) || isNaN(pctA) || isNaN(pctB)){
+        el.innerHTML = emptyResult('Cargá el precio y los dos porcentajes.');
+        setTone(el, null);
+        return;
+      }
+      if (precio < 0 || pctA < 0 || pctB < 0){
+        el.innerHTML = warningResult('El precio y los porcentajes no pueden ser negativos.');
+        setTone(el, 'bad');
+        return;
+      }
+      const finalA = opA === 'descuento' ? precio * (1 - pctA/100) : precio * (1 + pctA/100);
+      const finalB = opB === 'descuento' ? precio * (1 - pctB/100) : precio * (1 + pctB/100);
+      const diff = finalB - finalA;
+      const cls = diff < 0 ? 'down' : (diff > 0 ? 'up' : '');
+      const labelA = (opA === 'descuento' ? '-' : '+') + fmtNum(pctA,2) + '%';
+      const labelB = (opB === 'descuento' ? '-' : '+') + fmtNum(pctB,2) + '%';
+
+      el.innerHTML = `
+        <div class="result-row"><span>Escenario A (${labelA})</span><span>$${fmt(finalA)}</span></div>
+        <div class="result-row"><span>Escenario B (${labelB})</span><span>$${fmt(finalB)}</span></div>
+        <div class="result-hero">
+          <span class="lbl">Diferencia (B − A)</span>
+          <span class="val ${cls}">${diff>=0?'+':'−'} $${fmt(Math.abs(diff))}</span>
+        </div>
+      `;
+      setTone(el, diff < 0 ? 'good' : (diff > 0 ? 'bad' : null));
+
+      lastPreciosText =
+`Precio original: $${fmt(precio)}
+Escenario A (${labelA}): $${fmt(finalA)}
+Escenario B (${labelB}): $${fmt(finalB)}
+Diferencia (B - A): ${diff>=0?'+':'-'} $${fmt(Math.abs(diff))}`;
+      return;
+    }
     if (priceMode === 'cadena'){
       const precio = parseNum(document.getElementById('p-precio3').value);
       if (isNaN(precio) || chainSteps.some(s => isNaN(s.pct))){
         el.innerHTML = emptyResult('Cargá el precio y los porcentajes de cada paso.');
         setTone(el, null);
+        return;
+      }
+      if (precio < 0 || chainSteps.some(s => s.pct < 0)){
+        el.innerHTML = warningResult('El precio y los porcentajes no pueden ser negativos.');
+        setTone(el, 'bad');
+        return;
+      }
+      if (chainSteps.some(s => s.op === 'descuento' && s.pct > 100)){
+        el.innerHTML = warningResult('Un descuento de más del 100% en un paso deja el precio en negativo. Revisá los porcentajes.');
+        setTone(el, 'bad');
         return;
       }
       let current = precio;
@@ -794,6 +1721,16 @@ Precio final: $${fmt(final)}
         setTone(el, null);
         return;
       }
+      if (precio < 0 || pct < 0){
+        el.innerHTML = warningResult('El precio y el porcentaje no pueden ser negativos.');
+        setTone(el, 'bad');
+        return;
+      }
+      if (op === 'descuento' && pct > 100){
+        el.innerHTML = warningResult('Un descuento de más del 100% deja el precio en negativo. Revisá el porcentaje.');
+        setTone(el, 'bad');
+        return;
+      }
       const monto = precio * (pct/100);
       const final = op === 'descuento' ? precio - monto : precio + monto;
       const cls = op === 'descuento' ? 'down' : 'up';
@@ -822,6 +1759,11 @@ Precio final: $${fmt(final)}`;
         setTone(el, null);
         return;
       }
+      if (precio < 0 || final < 0){
+        el.innerHTML = warningResult('Los precios no pueden ser negativos.');
+        setTone(el, 'bad');
+        return;
+      }
       const diff = final - precio;
       const pct = Math.abs(diff / precio) * 100;
       const isDown = diff < 0;
@@ -848,6 +1790,8 @@ ${label}: ${fmtNum(pct,2)}%`;
   }
 
   document.getElementById('copy-precios').addEventListener('click', (e) => copyText(lastPreciosText, e.currentTarget));
+  document.getElementById('share-precios').addEventListener('click', (e) => shareText(lastPreciosText, e.currentTarget));
+  document.getElementById('image-precios').addEventListener('click', (e) => shareAsImage('Precios', lastPreciosText, e.currentTarget));
 
   // ================= MEDIDAS =================
   const mValor = document.getElementById('m-valor');
@@ -862,6 +1806,12 @@ ${label}: ${fmtNum(pct,2)}%`;
     const unidad = mUnidad.value;
     if (isNaN(valor)){
       el.innerHTML = emptyResult('Cargá un valor para convertir.');
+      setTone(el, null);
+      return;
+    }
+    if (valor < 0){
+      el.innerHTML = warningResult('Una medida no puede ser negativa.');
+      setTone(el, 'bad');
       return;
     }
     const toMM = {mm:1, cm:10, m:1000, km:1000000, in:25.4, yd:914.4};
@@ -877,32 +1827,51 @@ ${label}: ${fmtNum(pct,2)}%`;
     ];
 
     el.innerHTML = rows.map(r => `
-      <div class="result-row ${r.u===unidad ? 'selected' : ''}"><span>${r.label}</span><span>${fmtNum(r.val, r.decimals)} ${r.u}</span></div>
+      <div class="result-row copyable ${r.u===unidad ? 'selected' : ''}" data-copy="${fmtNum(r.val, r.decimals)} ${r.u}"><span>${r.label}</span><span>${fmtNum(r.val, r.decimals)} ${r.u}</span></div>
     `).join('');
+    setTone(el, null);
 
     lastMedidasText = `Valor: ${fmtNum(valor,3)} ${unidad}\n` + rows.map(r => `${r.label}: ${fmtNum(r.val, r.decimals)} ${r.u}`).join('\n');
   }
 
   document.getElementById('copy-medidas').addEventListener('click', (e) => copyText(lastMedidasText, e.currentTarget));
+  document.getElementById('share-medidas').addEventListener('click', (e) => shareText(lastMedidasText, e.currentTarget));
+  document.getElementById('image-medidas').addEventListener('click', (e) => shareAsImage('Medidas', lastMedidasText, e.currentTarget));
+
+  // Tocar una fila puntual copia solo ese valor (no todo el listado)
+  document.getElementById('receipt-medidas').addEventListener('click', (e) => {
+    const row = e.target.closest('.result-row.copyable');
+    if (!row) return;
+    copyRow(row, row.dataset.copy);
+  });
 
   // ================= PROPINA =================
   const prTotal = document.getElementById('pr-total');
   const prPct = document.getElementById('pr-pct');
   const prPersonasDisplay = document.getElementById('pr-personas-display');
-  let prPersonas = 4;
 
   [prTotal, prPct].forEach(el => el.addEventListener('input', renderPropina));
 
   document.getElementById('pr-minus').addEventListener('click', () => {
-    prPersonas = Math.max(1, prPersonas - 1);
-    prPersonasDisplay.textContent = prPersonas;
+    prPersonasDisplay.value = Math.max(1, getPersonas() - 1);
     renderPropina();
   });
   document.getElementById('pr-plus').addEventListener('click', () => {
-    prPersonas = Math.min(50, prPersonas + 1);
-    prPersonasDisplay.textContent = prPersonas;
+    prPersonasDisplay.value = Math.min(50, getPersonas() + 1);
     renderPropina();
   });
+  prPersonasDisplay.addEventListener('input', renderPropina);
+  prPersonasDisplay.addEventListener('blur', () => {
+    prPersonasDisplay.value = getPersonas();
+    renderPropina();
+  });
+
+  function getPersonas(){
+    let n = parseInt(prPersonasDisplay.value, 10);
+    if (isNaN(n) || n < 1) n = 1;
+    if (n > 50) n = 50;
+    return n;
+  }
 
   document.querySelectorAll('#propina-chips .chip').forEach(chip => {
     chip.addEventListener('click', () => {
@@ -917,10 +1886,16 @@ ${label}: ${fmtNum(pct,2)}%`;
     const el = document.getElementById('receipt-propina');
     const total = parseNum(prTotal.value);
     const pct = parseNum(prPct.value);
-    const personas = prPersonas;
+    const personas = getPersonas();
     syncChips('#propina-chips', prPct.value);
     if (isNaN(total) || isNaN(pct)){
       el.innerHTML = emptyResult('Cargá el total y la propina.');
+      setTone(el, null);
+      return;
+    }
+    if (total < 0 || pct < 0){
+      el.innerHTML = warningResult('El total y la propina no pueden ser negativos.');
+      setTone(el, 'bad');
       return;
     }
     const propinaMonto = total * (pct/100);
@@ -936,6 +1911,7 @@ ${label}: ${fmtNum(pct,2)}%`;
         <span class="val up">$${fmt(porPersona)}</span>
       </div>
     `;
+    setTone(el, null);
 
     lastPropinaText =
 `Subtotal: $${fmt(total)}
@@ -945,6 +1921,8 @@ Por persona (${personas}): $${fmt(porPersona)}`;
   }
 
   document.getElementById('copy-propina').addEventListener('click', (e) => copyText(lastPropinaText, e.currentTarget));
+  document.getElementById('share-propina').addEventListener('click', (e) => shareText(lastPropinaText, e.currentTarget));
+  document.getElementById('image-propina').addEventListener('click', (e) => shareAsImage('Propina', lastPropinaText, e.currentTarget));
 
   // ================= REGLA DE 3 =================
   const r3A = document.getElementById('r3-a');
@@ -975,6 +1953,12 @@ Por persona (${personas}): $${fmt(porPersona)}`;
     const c = parseNum(r3C.value);
     if (isNaN(a) || isNaN(b) || isNaN(c) || a === 0 || c === 0){
       el.innerHTML = emptyResult('Cargá los tres valores conocidos.');
+      setTone(el, null);
+      return;
+    }
+    if (a < 0 || b < 0 || c < 0){
+      el.innerHTML = warningResult('Los valores no pueden ser negativos.');
+      setTone(el, 'bad');
       return;
     }
     const d = r3Mode === 'directa' ? (b * c) / a : (a * b) / c;
@@ -988,6 +1972,7 @@ Por persona (${personas}): $${fmt(porPersona)}`;
         <span class="val up">${fmtNum(d,4)}</span>
       </div>
     `;
+    setTone(el, null);
 
     lastRegla3Text =
 `Regla de 3 ${tipoLabel.toLowerCase()}
@@ -996,39 +1981,91 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
   }
 
   document.getElementById('copy-regla3').addEventListener('click', (e) => copyText(lastRegla3Text, e.currentTarget));
+  document.getElementById('share-regla3').addEventListener('click', (e) => shareText(lastRegla3Text, e.currentTarget));
+  document.getElementById('image-regla3').addEventListener('click', (e) => shareAsImage('Regla de 3', lastRegla3Text, e.currentTarget));
 
-  // ---------- Limpiar ----------
+  // ---------- Limpiar (con Deshacer) ----------
   function clearFields(ids){
     ids.forEach(id => { document.getElementById(id).value = ''; });
+  }
+  function fieldValues(ids){
+    const out = {};
+    ids.forEach(id => { out[id] = document.getElementById(id).value; });
+    return out;
+  }
+  function restoreFieldValues(values){
+    Object.entries(values).forEach(([id, val]) => { document.getElementById(id).value = val; });
+  }
+
+  let lastClearSnapshot = null;
+  let undoToastTimer = null;
+  const undoToast = document.getElementById('undo-toast');
+  const undoBtn = document.getElementById('undo-btn');
+
+  function showUndoToast(){
+    undoToast.classList.add('visible');
+    clearTimeout(undoToastTimer);
+    undoToastTimer = setTimeout(() => {
+      undoToast.classList.remove('visible');
+      lastClearSnapshot = null;
+    }, 5000);
   }
 
   document.querySelectorAll('.clear-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const tab = btn.dataset.clear;
+      if (!tab) return; // ej. el botón "Actualizar" de Dólar no participa de esto
+
       if (tab === 'precios'){
         if (priceMode === 'directo'){
+          lastClearSnapshot = { tab, mode: 'directo', values: fieldValues(['p-precio','p-pct']) };
           clearFields(['p-precio','p-pct']);
         } else if (priceMode === 'reverso'){
+          lastClearSnapshot = { tab, mode: 'reverso', values: fieldValues(['p-precio2','p-final2']) };
           clearFields(['p-precio2','p-final2']);
         } else {
+          lastClearSnapshot = { tab, mode: 'cadena', values: fieldValues(['p-precio3']), chainSteps: JSON.parse(JSON.stringify(chainSteps)) };
           document.getElementById('p-precio3').value = '';
           chainSteps = [{op:'descuento', pct:NaN}, {op:'descuento', pct:NaN}];
           renderChainRows();
         }
         renderPrecios();
       } else if (tab === 'medidas'){
+        lastClearSnapshot = { tab, values: fieldValues(['m-valor']) };
         clearFields(['m-valor']);
         renderMedidas();
       } else if (tab === 'propina'){
+        lastClearSnapshot = { tab, values: fieldValues(['pr-total','pr-pct','pr-personas-display']) };
         clearFields(['pr-total','pr-pct']);
-        prPersonas = 1;
-        prPersonasDisplay.textContent = prPersonas;
+        prPersonasDisplay.value = 1;
         renderPropina();
       } else if (tab === 'regla3'){
+        lastClearSnapshot = { tab, values: fieldValues(['r3-a','r3-b','r3-c']) };
         clearFields(['r3-a','r3-b','r3-c']);
         renderRegla3();
       }
+      showUndoToast();
     });
+  });
+
+  undoBtn.addEventListener('click', () => {
+    if (!lastClearSnapshot) return;
+    const snap = lastClearSnapshot;
+    restoreFieldValues(snap.values);
+    if (snap.tab === 'precios'){
+      if (snap.chainSteps) chainSteps = snap.chainSteps;
+      if (snap.mode === 'cadena') renderChainRows();
+      renderPrecios();
+    } else if (snap.tab === 'medidas'){
+      renderMedidas();
+    } else if (snap.tab === 'propina'){
+      renderPropina();
+    } else if (snap.tab === 'regla3'){
+      renderRegla3();
+    }
+    undoToast.classList.remove('visible');
+    clearTimeout(undoToastTimer);
+    lastClearSnapshot = null;
   });
 
   // ---------- Auto-seleccionar al tocar un campo ----------
@@ -1039,6 +2076,222 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
   document.addEventListener('focusin', (e) => {
     if (e.target.matches('input[type=text]')) e.target.select();
   });
+
+  // ---------- Enter/Listo pasa al siguiente campo ----------
+  // Evita tener que tocar el próximo campo a mano; en el último campo
+  // visible simplemente cierra el teclado.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter') return;
+    const target = e.target;
+    if (!target.matches('input[type=text]')) return;
+    const panel = target.closest('.panel');
+    if (!panel){ target.blur(); return; }
+    const focusables = Array.from(panel.querySelectorAll('input[type=text]'))
+      .filter(el => !el.closest('[style*="display: none"], [style*="display:none"]'));
+    const idx = focusables.indexOf(target);
+    e.preventDefault();
+    if (idx > -1 && idx < focusables.length - 1){
+      focusables[idx + 1].focus();
+    } else {
+      target.blur();
+    }
+  });
+
+  // ================= DÓLAR =================
+  // Cotización en vivo desde dolarapi.com (la misma fuente que ya usaste
+  // para el proyecto de LaConfe). Se carga la primera vez que se abre esta
+  // pestaña, y se puede volver a pedir con "Actualizar".
+  const CASA_LABELS = {
+    oficial:'Oficial', blue:'Blue', bolsa:'MEP', contadoconliqui:'CCL',
+    tarjeta:'Tarjeta', mayorista:'Mayorista', cripto:'Cripto'
+  };
+  const CASA_ORDER = ['oficial','blue','bolsa','contadoconliqui','tarjeta','mayorista','cripto'];
+
+  let dolarData = null;
+  let dolarLoading = false;
+  let dolarLastFetch = 0;
+  let dolarDir = 'ars-usd';
+  let lastDolarText = '';
+
+  const dolarRatesEl = document.getElementById('dolar-rates');
+  const dolarUpdatedEl = document.getElementById('dolar-updated');
+  const dolarCasaSelect = document.getElementById('dolar-casa');
+  const dolarMontoInput = document.getElementById('dolar-monto');
+
+  async function fetchDolar(){
+    if (dolarLoading) return;
+    dolarLoading = true;
+    const isFirstLoad = !dolarData;
+    if (isFirstLoad){
+      dolarRatesEl.innerHTML = '<div class="result-empty">Cargando cotización…</div>';
+      dolarUpdatedEl.textContent = '';
+    }
+    try{
+      const res = await fetch('https://dolarapi.com/v1/dolares');
+      if (!res.ok) throw new Error('respuesta no OK');
+      const data = await res.json();
+      if (!Array.isArray(data) || data.length === 0) throw new Error('respuesta vacía');
+      dolarData = data;
+      dolarLastFetch = Date.now();
+      populateDolarCasaSelect();
+      renderDolarRates();
+      renderDolar();
+    }catch(e){
+      // Si ya había una cotización cargada, la dejamos como está (mejor una
+      // cotización un poco vieja que borrarla por un refresh silencioso fallido).
+      if (isFirstLoad){
+        dolarRatesEl.innerHTML = '<div class="result-empty result-warning">⚠ No se pudo obtener la cotización. Revisá tu conexión y tocá "Actualizar".</div>';
+      }
+    }finally{
+      dolarLoading = false;
+    }
+  }
+
+  // Refresco automático: cada 5 minutos, y también al volver a la pestaña
+  // del navegador después de un rato, para que la cotización no quede vieja.
+  const DOLAR_REFRESH_MS = 5 * 60 * 1000;
+  function maybeAutoRefreshDolar(){
+    if (!dolarData) return;
+    if (Date.now() - dolarLastFetch > DOLAR_REFRESH_MS) fetchDolar();
+  }
+  setInterval(maybeAutoRefreshDolar, 60 * 1000);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') maybeAutoRefreshDolar();
+  });
+
+  function renderDolarRates(){
+    if (!dolarData) return;
+    const sorted = CASA_ORDER.map(c => dolarData.find(d => d.casa === c)).filter(Boolean);
+    dolarRatesEl.innerHTML = sorted.map(d => `
+      <div class="result-row"><span>${CASA_LABELS[d.casa] || d.nombre}</span><span>$${fmt(d.compra)} / $${fmt(d.venta)}</span></div>
+    `).join('');
+    const first = sorted[0];
+    if (first){
+      try{
+        const date = new Date(first.fechaActualizacion);
+        dolarUpdatedEl.textContent = 'Compra / Venta · Actualizado ' + date.toLocaleString('es-AR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+      }catch(e){
+        dolarUpdatedEl.textContent = 'Compra / Venta';
+      }
+    }
+  }
+
+  function populateDolarCasaSelect(){
+    const current = dolarCasaSelect.value;
+    const available = CASA_ORDER.filter(c => dolarData.some(d => d.casa === c));
+    dolarCasaSelect.innerHTML = available.map(c => `<option value="${c}">${CASA_LABELS[c]}</option>`).join('');
+    if (available.includes(current)) dolarCasaSelect.value = current;
+  }
+
+  document.querySelectorAll('.dolar-dir-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.dolar-dir-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      dolarDir = btn.dataset.dir;
+      renderDolar();
+    });
+  });
+  dolarMontoInput.addEventListener('input', renderDolar);
+  dolarCasaSelect.addEventListener('input', renderDolar);
+  document.getElementById('dolar-refresh').addEventListener('click', () => fetchDolar());
+
+  function renderDolar(){
+    const el = document.getElementById('receipt-dolar');
+    if (!dolarData){
+      el.innerHTML = emptyResult('Esperando la cotización…');
+      setTone(el, null);
+      return;
+    }
+    const monto = parseNum(dolarMontoInput.value);
+    const casa = dolarData.find(d => d.casa === dolarCasaSelect.value);
+    if (isNaN(monto) || !casa){
+      el.innerHTML = emptyResult('Cargá un monto.');
+      setTone(el, null);
+      return;
+    }
+    if (monto < 0){
+      el.innerHTML = warningResult('El monto no puede ser negativo.');
+      setTone(el, 'bad');
+      return;
+    }
+    const nombre = CASA_LABELS[casa.casa] || casa.nombre;
+    let resultado, label, detalle, prefix;
+    if (dolarDir === 'ars-usd'){
+      resultado = monto / casa.venta;
+      label = 'Recibís';
+      prefix = 'US$';
+      detalle = `Dólar ${nombre} a $${fmt(casa.venta)} (venta)`;
+    } else {
+      resultado = monto * casa.compra;
+      label = 'Recibís';
+      prefix = '$';
+      detalle = `Dólar ${nombre} a $${fmt(casa.compra)} (compra)`;
+    }
+
+    el.innerHTML = `
+      <div class="result-row"><span>${detalle}</span><span>${dolarDir === 'ars-usd' ? '$' + fmt(monto) : 'US$' + fmt(monto)}</span></div>
+      <div class="result-hero">
+        <span class="lbl">${label}</span>
+        <span class="val up">${prefix}${fmt(resultado)}</span>
+      </div>
+    `;
+    setTone(el, null);
+
+    lastDolarText = `${detalle}\nMonto: ${dolarDir === 'ars-usd' ? '$' + fmt(monto) : 'US$' + fmt(monto)}\n${label}: ${prefix}${fmt(resultado)}`;
+  }
+
+  document.getElementById('copy-dolar').addEventListener('click', (e) => copyText(lastDolarText, e.currentTarget));
+  document.getElementById('share-dolar').addEventListener('click', (e) => shareText(lastDolarText, e.currentTarget));
+  document.getElementById('image-dolar').addEventListener('click', (e) => shareAsImage('Dólar', lastDolarText, e.currentTarget));
+
+  // ================= TALLES =================
+  // Tabla orientativa de indumentaria (mujer, talles numéricos). Las marcas
+  // varían bastante entre sí, así que esto es una referencia general.
+  const TALLES_TABLE = [
+    {arg:36, us:2,  uk:6,  eu:34},
+    {arg:38, us:4,  uk:8,  eu:36},
+    {arg:40, us:6,  uk:10, eu:38},
+    {arg:42, us:8,  uk:12, eu:40},
+    {arg:44, us:10, uk:14, eu:42},
+    {arg:46, us:12, uk:16, eu:44},
+    {arg:48, us:14, uk:18, eu:46},
+  ];
+  const TALLE_LABELS = {arg:'Argentina', us:'Estados Unidos (US)', uk:'Reino Unido (UK)', eu:'Europa (EU)'};
+
+  const talleSistemaSelect = document.getElementById('talle-sistema');
+  const talleValorSelect = document.getElementById('talle-valor');
+  let lastTallesText = '';
+
+  function populateTalleValores(){
+    const sistema = talleSistemaSelect.value;
+    const current = talleValorSelect.value;
+    talleValorSelect.innerHTML = TALLES_TABLE.map(row => `<option value="${row[sistema]}">${row[sistema]}</option>`).join('');
+    if ([...talleValorSelect.options].some(o => o.value === current)) talleValorSelect.value = current;
+  }
+
+  function renderTalles(){
+    const el = document.getElementById('receipt-talles');
+    const sistema = talleSistemaSelect.value;
+    const valor = parseInt(talleValorSelect.value, 10);
+    const row = TALLES_TABLE.find(r => r[sistema] === valor);
+    if (!row){
+      el.innerHTML = emptyResult('Elegí un talle.');
+      return;
+    }
+    el.innerHTML = Object.keys(TALLE_LABELS).map(key => `
+      <div class="result-row ${key === sistema ? 'selected' : ''}"><span>${TALLE_LABELS[key]}</span><span>${row[key]}</span></div>
+    `).join('');
+    lastTallesText = Object.keys(TALLE_LABELS).map(key => `${TALLE_LABELS[key]}: ${row[key]}`).join('\n');
+  }
+
+  talleSistemaSelect.addEventListener('input', () => { populateTalleValores(); renderTalles(); });
+  talleValorSelect.addEventListener('input', renderTalles);
+  document.getElementById('copy-talles').addEventListener('click', (e) => copyText(lastTallesText, e.currentTarget));
+  document.getElementById('share-talles').addEventListener('click', (e) => shareText(lastTallesText, e.currentTarget));
+  document.getElementById('image-talles').addEventListener('click', (e) => shareAsImage('Talles', lastTallesText, e.currentTarget));
+
+  populateTalleValores();
+  renderTalles();
 
   // ---------- Registro del Service Worker ----------
   if ('serviceWorker' in navigator){
@@ -1052,6 +2305,13 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
   renderMedidas();
   renderPropina();
   renderRegla3();
+
+  let initialTab = 'precios';
+  try{
+    const savedTab = localStorage.getItem(LAST_TAB_KEY);
+    if (savedTab && panels[savedTab]) initialTab = savedTab;
+  }catch(e){ /* sin storage disponible, se queda en Precios */ }
+  activateTab(initialTab);
 </script>
 </body>
 </html>

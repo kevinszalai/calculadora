@@ -1,7 +1,7 @@
 {
-  "name": "Calculadora · Porcentajes y Medidas",
+  "name": "Calculadora · Todo en uno",
   "short_name": "Calculadora",
-  "description": "Porcentajes, medidas, propina y regla de 3, todo en un solo lugar.",
+  "description": "Precios, medidas, propina, regla de 3, cotización del dólar y talles, todo en un solo lugar.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
