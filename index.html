@@ -584,6 +584,8 @@
 
   /* Resultado: plano, sin ticket, todo en la misma tarjeta */
   .result{
+    display:flex;
+    flex-direction:column;
     margin-top:16px;
     padding:14px 16px;
     border-radius:8px;
@@ -637,12 +639,13 @@
     color:var(--amber-bright);
   }
   .result-hero{
+    order:-1;
     display:flex;
     justify-content:space-between;
     align-items:baseline;
-    margin-top:8px;
-    padding-top:12px;
-    border-top:1px solid var(--border);
+    margin-bottom:8px;
+    padding-bottom:12px;
+    border-bottom:1px solid var(--border);
   }
   .result-hero .lbl{
     font-size:13px;
@@ -736,10 +739,15 @@
     ⤓ Instalar app
   </button>
 
-  <div class="tabs">
+  <div class="tabs tabs-primary">
     <button class="tab-btn active" data-tab="precios">Precios</button>
     <button class="tab-btn" data-tab="dolar">Dólar</button>
     <button class="tab-btn" data-tab="medidas">Medidas</button>
+  </div>
+
+  <button type="button" class="link-toggle" id="tabs-more-toggle">Más funciones ▾</button>
+
+  <div class="tabs tabs-secondary" id="tabs-secondary" style="display:none;">
     <button class="tab-btn" data-tab="propina">Propina</button>
     <button class="tab-btn" data-tab="regla3">Regla de 3</button>
     <button class="tab-btn" data-tab="talles">Talles</button>
@@ -1025,22 +1033,27 @@
     <div class="card">
       <div class="card-header"><h2>Talles</h2></div>
 
-      <div class="field">
-        <label for="talle-sistema">Tengo el talle en</label>
-        <select id="talle-sistema">
-          <option value="arg">Argentina</option>
-          <option value="us">Estados Unidos (US)</option>
-          <option value="uk">Reino Unido (UK)</option>
-          <option value="eu">Europa (EU)</option>
-        </select>
+      <div class="segment">
+        <button class="talles-tipo-btn active" data-tipo="ropa">Ropa</button>
+        <button class="talles-tipo-btn" data-tipo="calzado">Calzado</button>
       </div>
-      <div class="field">
-        <label for="talle-valor">Talle</label>
-        <select id="talle-valor"></select>
+
+      <div id="talles-ropa">
+        <div class="field">
+          <label for="talle-unico">Tu talle</label>
+          <select id="talle-unico"></select>
+        </div>
+      </div>
+
+      <div id="talles-calzado" style="display:none;">
+        <div class="field">
+          <label for="talle-calzado">Tu talle</label>
+          <select id="talle-calzado"></select>
+        </div>
       </div>
 
       <div class="result" id="receipt-talles" aria-live="polite" aria-atomic="true"></div>
-      <p class="hint">Tabla orientativa de indumentaria (mujer, talles numéricos). Cada marca puede variar levemente.</p>
+      <p class="hint" id="talles-hint">Tabla orientativa de indumentaria (mujer, talles numéricos). Cada marca puede variar levemente.</p>
       <div class="actions">
         <button type="button" class="btn-copy" id="share-talles"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>Compartir</button>
         <button type="button" class="btn-secondary btn-image" id="image-talles" title="Compartir como imagen" aria-label="Compartir como imagen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></button>
@@ -1172,7 +1185,7 @@
     if (navigator.vibrate) navigator.vibrate(ms || 12);
   }
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.tab-btn, .mode-btn, .op-btn, .op-btn-a, .op-btn-b, .chain-op-btn, .chip, .r3-mode-btn, .step-btn, .clear-btn, .chain-remove, .result-row.copyable, .swap-btn, .a11y-btn, .dolar-dir-btn, .link-toggle')){
+    if (e.target.closest('.tab-btn, .mode-btn, .op-btn, .op-btn-a, .op-btn-b, .chain-op-btn, .chip, .r3-mode-btn, .step-btn, .clear-btn, .chain-remove, .result-row.copyable, .swap-btn, .a11y-btn, .dolar-dir-btn, .link-toggle, .talles-tipo-btn')){
       buzz();
     }
   });
@@ -1187,17 +1200,50 @@
     dolar: document.getElementById('panel-dolar'),
     talles: document.getElementById('panel-talles')
   };
+  const SECONDARY_TABS = ['propina', 'regla3', 'talles'];
   const LAST_TAB_KEY = 'calc_last_tab';
+  const tabsMoreToggle = document.getElementById('tabs-more-toggle');
+  const tabsSecondary = document.getElementById('tabs-secondary');
+  let tabsMoreOpen = false;
+  let currentTab = 'precios';
+
+  function updateTabsSecondaryVisibility(){
+    const shouldShow = tabsMoreOpen || SECONDARY_TABS.includes(currentTab);
+    tabsSecondary.style.display = shouldShow ? 'grid' : 'none';
+    tabsMoreToggle.textContent = shouldShow ? 'Ocultar otras funciones ▴' : 'Más funciones ▾';
+  }
 
   function activateTab(tabName){
     if (!panels[tabName]) tabName = 'precios';
+    currentTab = tabName;
+    if (!SECONDARY_TABS.includes(tabName)){
+      // Aterrizar en una pestaña primaria siempre colapsa "Más funciones",
+      // aunque se haya abierto manualmente antes.
+      tabsMoreOpen = false;
+    }
     tabBtns.forEach(b => b.classList.toggle('active', b.dataset.tab === tabName));
     Object.entries(panels).forEach(([name, p]) => p.classList.toggle('active', name === tabName));
+    updateTabsSecondaryVisibility();
     if (tabName === 'dolar' && !dolarData){
       fetchDolar();
     }
     try{ localStorage.setItem(LAST_TAB_KEY, tabName); }catch(e){ /* sin storage disponible, no rompe nada */ }
   }
+
+  tabsMoreToggle.addEventListener('click', () => {
+    const currentlyShown = tabsMoreOpen || SECONDARY_TABS.includes(currentTab);
+    if (currentlyShown){
+      tabsMoreOpen = false;
+      if (SECONDARY_TABS.includes(currentTab)){
+        activateTab('precios');
+      } else {
+        updateTabsSecondaryVisibility();
+      }
+    } else {
+      tabsMoreOpen = true;
+      updateTabsSecondaryVisibility();
+    }
+  });
 
   tabBtns.forEach(btn => {
     btn.addEventListener('click', () => activateTab(btn.dataset.tab));
@@ -1464,25 +1510,38 @@
     preciosModeSwitcher.style.display = shouldShow ? 'block' : 'none';
     preciosMoreToggle.textContent = shouldShow ? 'Ocultar otras formas de calcular ▴' : 'Más formas de calcular ▾';
   }
-  preciosMoreToggle.addEventListener('click', () => {
-    modeSwitcherOpen = !modeSwitcherOpen;
+
+  function selectPriceMode(mode){
+    modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+    priceMode = mode;
+    document.getElementById('mode-directo').style.display = priceMode === 'directo' ? 'block' : 'none';
+    document.getElementById('mode-reverso').style.display = priceMode === 'reverso' ? 'block' : 'none';
+    document.getElementById('mode-cadena').style.display = priceMode === 'cadena' ? 'block' : 'none';
+    document.getElementById('mode-tabla').style.display = priceMode === 'tabla' ? 'block' : 'none';
+    document.getElementById('mode-comparar').style.display = priceMode === 'comparar' ? 'block' : 'none';
     updateModeSwitcherVisibility();
+    renderPrecios();
+  }
+
+  preciosMoreToggle.addEventListener('click', () => {
+    const currentlyShown = modeSwitcherOpen || priceMode !== 'directo';
+    if (currentlyShown){
+      // "Ocultar": colapsa el switcher y, si estabas en otro modo, vuelve a Aplicar %
+      modeSwitcherOpen = false;
+      if (priceMode !== 'directo'){
+        selectPriceMode('directo');
+      } else {
+        updateModeSwitcherVisibility();
+      }
+    } else {
+      modeSwitcherOpen = true;
+      updateModeSwitcherVisibility();
+    }
   });
   updateModeSwitcherVisibility();
 
   modeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      modeBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      priceMode = btn.dataset.mode;
-      document.getElementById('mode-directo').style.display = priceMode === 'directo' ? 'block' : 'none';
-      document.getElementById('mode-reverso').style.display = priceMode === 'reverso' ? 'block' : 'none';
-      document.getElementById('mode-cadena').style.display = priceMode === 'cadena' ? 'block' : 'none';
-      document.getElementById('mode-tabla').style.display = priceMode === 'tabla' ? 'block' : 'none';
-      document.getElementById('mode-comparar').style.display = priceMode === 'comparar' ? 'block' : 'none';
-      updateModeSwitcherVisibility();
-      renderPrecios();
-    });
+    btn.addEventListener('click', () => selectPriceMode(btn.dataset.mode));
   });
 
   let op = 'descuento';
@@ -2105,7 +2164,7 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
     oficial:'Oficial', blue:'Blue', bolsa:'MEP', contadoconliqui:'CCL',
     tarjeta:'Tarjeta', mayorista:'Mayorista', cripto:'Cripto'
   };
-  const CASA_ORDER = ['oficial','blue','bolsa','contadoconliqui','tarjeta','mayorista','cripto'];
+  const CASA_ORDER = ['oficial','blue','tarjeta'];
 
   let dolarData = null;
   let dolarLoading = false;
@@ -2163,7 +2222,7 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
     if (!dolarData) return;
     const sorted = CASA_ORDER.map(c => dolarData.find(d => d.casa === c)).filter(Boolean);
     dolarRatesEl.innerHTML = sorted.map(d => `
-      <div class="result-row"><span>${CASA_LABELS[d.casa] || d.nombre}</span><span>$${fmt(d.compra)} / $${fmt(d.venta)}</span></div>
+      <div class="result-row ${d.casa === 'oficial' ? 'selected' : ''}"><span>${CASA_LABELS[d.casa] || d.nombre}</span><span>$${fmt(d.compra)} / $${fmt(d.venta)}</span></div>
     `).join('');
     const first = sorted[0];
     if (first){
@@ -2245,9 +2304,10 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
   document.getElementById('image-dolar').addEventListener('click', (e) => shareAsImage('Dólar', lastDolarText, e.currentTarget));
 
   // ================= TALLES =================
-  // Tabla orientativa de indumentaria (mujer, talles numéricos). Las marcas
-  // varían bastante entre sí, así que esto es una referencia general.
-  const TALLES_TABLE = [
+  // Tablas orientativas. Las marcas varían bastante entre sí, así que esto
+  // es una referencia general, no una medida exacta.
+  const TALLES_ROPA = [
+    {arg:34, us:0,  uk:4,  eu:32},
     {arg:36, us:2,  uk:6,  eu:34},
     {arg:38, us:4,  uk:8,  eu:36},
     {arg:40, us:6,  uk:10, eu:38},
@@ -2255,42 +2315,97 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
     {arg:44, us:10, uk:14, eu:42},
     {arg:46, us:12, uk:16, eu:44},
     {arg:48, us:14, uk:18, eu:46},
+    {arg:50, us:16, uk:20, eu:48},
+    {arg:52, us:18, uk:22, eu:50},
+    {arg:54, us:20, uk:24, eu:52},
   ];
-  const TALLE_LABELS = {arg:'Argentina', us:'Estados Unidos (US)', uk:'Reino Unido (UK)', eu:'Europa (EU)'};
+  const ROPA_LABELS = {arg:'Argentina', us:'Estados Unidos (US)', uk:'Reino Unido (UK)', eu:'Europa (EU)'};
 
-  const talleSistemaSelect = document.getElementById('talle-sistema');
-  const talleValorSelect = document.getElementById('talle-valor');
+  // Calzado: el EU es aproximadamente unisex; US y UK sí difieren entre
+  // dama y caballero, por eso van separados.
+  const TALLES_CALZADO = [
+    {eu:35, cm:22.0, uk:2.5, usw:5,   usm:3.5},
+    {eu:36, cm:22.5, uk:3.5, usw:5.5, usm:4},
+    {eu:37, cm:23.5, uk:4.5, usw:6.5, usm:5},
+    {eu:38, cm:24.0, uk:5,   usw:7,   usm:5.5},
+    {eu:39, cm:24.5, uk:5.5, usw:7.5, usm:6},
+    {eu:40, cm:25.5, uk:6.5, usw:8.5, usm:7},
+    {eu:41, cm:26.0, uk:7,   usw:9,   usm:7.5},
+    {eu:42, cm:27.0, uk:8,   usw:10,  usm:8.5},
+    {eu:43, cm:27.5, uk:8.5, usw:10.5,usm:9},
+    {eu:44, cm:28.5, uk:9.5, usw:11.5,usm:10},
+    {eu:45, cm:29.0, uk:10,  usw:12,  usm:10.5},
+    {eu:46, cm:30.0, uk:11,  usw:13,  usm:11.5},
+  ];
+  const CALZADO_LABELS = {eu:'Europa (EU)', usw:'Estados Unidos — dama', usm:'Estados Unidos — caballero', uk:'Reino Unido (UK)', cm:'Largo del pie (cm)'};
+
+  const tallesTipoBtns = document.querySelectorAll('.talles-tipo-btn');
+  const talleUnicoSelect = document.getElementById('talle-unico');
+  const talleCalzadoSelect = document.getElementById('talle-calzado');
+  const tallesRopaDiv = document.getElementById('talles-ropa');
+  const tallesCalzadoDiv = document.getElementById('talles-calzado');
+  const tallesHint = document.getElementById('talles-hint');
+  let tallesTipo = 'ropa';
   let lastTallesText = '';
 
-  function populateTalleValores(){
-    const sistema = talleSistemaSelect.value;
-    const current = talleValorSelect.value;
-    talleValorSelect.innerHTML = TALLES_TABLE.map(row => `<option value="${row[sistema]}">${row[sistema]}</option>`).join('');
-    if ([...talleValorSelect.options].some(o => o.value === current)) talleValorSelect.value = current;
+  function populateTalleUnico(){
+    talleUnicoSelect.innerHTML = TALLES_ROPA.map((row, i) =>
+      `<option value="${i}">ARG ${row.arg} · US ${row.us} · UK ${row.uk} · EU ${row.eu}</option>`
+    ).join('');
   }
+  function populateTalleCalzado(){
+    talleCalzadoSelect.innerHTML = TALLES_CALZADO.map((row, i) =>
+      `<option value="${i}">EU ${row.eu} · US dama ${row.usw} · US caballero ${row.usm} · UK ${row.uk}</option>`
+    ).join('');
+  }
+
+  tallesTipoBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tallesTipoBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      tallesTipo = btn.dataset.tipo;
+      tallesRopaDiv.style.display = tallesTipo === 'ropa' ? 'block' : 'none';
+      tallesCalzadoDiv.style.display = tallesTipo === 'calzado' ? 'block' : 'none';
+      tallesHint.textContent = tallesTipo === 'ropa'
+        ? 'Tabla orientativa de indumentaria (mujer, talles numéricos). Cada marca puede variar levemente.'
+        : 'Tabla orientativa de calzado. Cada marca usa su propia horma — probate el par siempre que puedas.';
+      renderTalles();
+    });
+  });
 
   function renderTalles(){
     const el = document.getElementById('receipt-talles');
-    const sistema = talleSistemaSelect.value;
-    const valor = parseInt(talleValorSelect.value, 10);
-    const row = TALLES_TABLE.find(r => r[sistema] === valor);
-    if (!row){
-      el.innerHTML = emptyResult('Elegí un talle.');
-      return;
+    if (tallesTipo === 'ropa'){
+      const row = TALLES_ROPA[parseInt(talleUnicoSelect.value, 10)];
+      if (!row){
+        el.innerHTML = emptyResult('Elegí un talle.');
+        return;
+      }
+      el.innerHTML = Object.keys(ROPA_LABELS).map(key => `
+        <div class="result-row ${key === 'arg' ? 'selected' : ''}"><span>${ROPA_LABELS[key]}</span><span>${row[key]}</span></div>
+      `).join('');
+      lastTallesText = Object.keys(ROPA_LABELS).map(key => `${ROPA_LABELS[key]}: ${row[key]}`).join('\n');
+    } else {
+      const row = TALLES_CALZADO[parseInt(talleCalzadoSelect.value, 10)];
+      if (!row){
+        el.innerHTML = emptyResult('Elegí un talle.');
+        return;
+      }
+      el.innerHTML = Object.keys(CALZADO_LABELS).map(key => `
+        <div class="result-row ${key === 'eu' ? 'selected' : ''}"><span>${CALZADO_LABELS[key]}</span><span>${key === 'cm' ? row[key].toFixed(1) : row[key]}</span></div>
+      `).join('');
+      lastTallesText = Object.keys(CALZADO_LABELS).map(key => `${CALZADO_LABELS[key]}: ${key === 'cm' ? row[key].toFixed(1) : row[key]}`).join('\n');
     }
-    el.innerHTML = Object.keys(TALLE_LABELS).map(key => `
-      <div class="result-row ${key === sistema ? 'selected' : ''}"><span>${TALLE_LABELS[key]}</span><span>${row[key]}</span></div>
-    `).join('');
-    lastTallesText = Object.keys(TALLE_LABELS).map(key => `${TALLE_LABELS[key]}: ${row[key]}`).join('\n');
   }
 
-  talleSistemaSelect.addEventListener('input', () => { populateTalleValores(); renderTalles(); });
-  talleValorSelect.addEventListener('input', renderTalles);
+  populateTalleUnico();
+  populateTalleCalzado();
+  talleUnicoSelect.addEventListener('input', renderTalles);
+  talleCalzadoSelect.addEventListener('input', renderTalles);
   document.getElementById('copy-talles').addEventListener('click', (e) => copyText(lastTallesText, e.currentTarget));
   document.getElementById('share-talles').addEventListener('click', (e) => shareText(lastTallesText, e.currentTarget));
   document.getElementById('image-talles').addEventListener('click', (e) => shareAsImage('Talles', lastTallesText, e.currentTarget));
 
-  populateTalleValores();
   renderTalles();
 
   // ---------- Registro del Service Worker ----------
