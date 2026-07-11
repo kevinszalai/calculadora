@@ -79,12 +79,12 @@
   .wrap{
     width:100%;
     max-width:460px;
-    padding:20px 16px 40px;
-    padding-top:max(20px, env(safe-area-inset-top));
+    padding:14px 14px 28px;
+    padding-top:max(14px, env(safe-area-inset-top));
   }
 
   h1{
-    font-size:19px;
+    font-size:17px;
     font-weight:700;
     margin:0;
     letter-spacing:-0.01em;
@@ -98,7 +98,7 @@
     align-items:flex-start;
     justify-content:space-between;
     gap:10px;
-    margin-bottom:16px;
+    margin-bottom:10px;
   }
 
   /* Banners de estado (sin conexión / instalar app) */
@@ -137,7 +137,7 @@
     color:var(--ink-dim);
     text-align:center;
     line-height:1.5;
-    margin:24px 4px 0;
+    margin:14px 4px 0;
     opacity:0.8;
   }
 
@@ -290,8 +290,8 @@
   .swap-btn{
     display:block;
     width:100%;
-    min-height:40px;
-    margin:-4px 0 14px;
+    min-height:36px;
+    margin:-2px 0 8px;
     background:none;
     border:1px dashed var(--border);
     border-radius:8px;
@@ -309,10 +309,10 @@
     display:grid;
     grid-template-columns:1fr 1fr 1fr;
     gap:6px;
-    margin-bottom:14px;
+    margin-bottom:8px;
   }
   .tab-btn{
-    min-height:48px;
+    min-height:40px;
     background:var(--card);
     border:1px solid var(--border);
     border-radius:8px;
@@ -365,14 +365,14 @@
     background:var(--card);
     border:1px solid var(--border);
     border-radius:10px;
-    padding:18px;
+    padding:14px;
   }
 
   .card-header{
     display:flex;
     align-items:center;
     justify-content:space-between;
-    margin-bottom:14px;
+    margin-bottom:10px;
   }
   .card-header h2{
     font-size:12px;
@@ -406,11 +406,11 @@
     border:1px solid var(--border);
     border-radius:8px;
     padding:4px;
-    margin-bottom:16px;
+    margin-bottom:10px;
   }
   .segment button{
     flex:1;
-    min-height:44px;
+    min-height:38px;
     background:none;
     border:none;
     border-radius:6px;
@@ -435,8 +435,8 @@
   .mode-btn-standalone{
     display:block;
     width:100%;
-    min-height:50px;
-    margin-bottom:10px;
+    min-height:42px;
+    margin-bottom:8px;
     background:rgba(46,196,182,0.12);
     border:1px solid var(--amber);
     border-radius:8px;
@@ -464,7 +464,7 @@
     text-underline-offset:2px;
     cursor:pointer;
     padding:0;
-    margin-bottom:14px;
+    margin-bottom:8px;
   }
   .link-toggle:hover{color:var(--amber-bright);}
   .link-toggle:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
@@ -472,20 +472,26 @@
 
   label{
     display:block;
-    font-size:12px;
+    font-size:11.5px;
     color:var(--ink-dim);
-    margin-bottom:6px;
+    margin-bottom:4px;
     font-weight:600;
   }
-  .field{margin-bottom:14px;}
+  .field{margin-bottom:8px;}
+  .field-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .field-row .field{margin-bottom:8px;}
   input[type=text], select{
     width:100%;
-    min-height:52px;
+    min-height:46px;
     background:var(--bg);
     border:1px solid var(--border);
     color:var(--ink);
     font-family:'JetBrains Mono',monospace;
-    font-size:18px;
+    font-size:17px;
     font-weight:600;
     padding:0 14px;
     border-radius:8px;
@@ -503,10 +509,10 @@
     border-color:var(--amber-bright);
   }
 
-  .op-row{display:flex; gap:8px; margin-bottom:14px;}
+  .op-row{display:flex; gap:8px; margin-bottom:8px;}
   .op-row button{
     flex:1;
-    min-height:48px;
+    min-height:42px;
     background:var(--bg);
     border:1px solid var(--border);
     color:var(--ink-dim);
@@ -521,18 +527,28 @@
     border-color:var(--amber);
     color:var(--amber-bright);
   }
+  .op-row button.active[data-op="descuento"]{
+    background:rgba(94,156,107,0.16);
+    border-color:var(--good);
+    color:var(--good);
+  }
+  .op-row button.active[data-op="aumento"]{
+    background:rgba(239,100,97,0.16);
+    border-color:var(--danger);
+    color:var(--danger);
+  }
   .op-row button:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
 
-  .chips{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:4px;}
+  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px;}
   .chip{
-    min-height:40px;
+    min-height:34px;
     background:var(--bg);
     border:1px solid var(--border);
     color:var(--ink-dim);
     font-family:'JetBrains Mono',monospace;
     font-size:13px;
     font-weight:600;
-    padding:0 14px;
+    padding:0 12px;
     border-radius:8px;
     cursor:pointer;
   }
@@ -543,6 +559,16 @@
     border-color:var(--amber);
     color:var(--amber-bright);
   }
+  #mode-directo:not(.op-aumento) .chip.active{
+    background:rgba(94,156,107,0.18);
+    border-color:var(--good);
+    color:var(--good);
+  }
+  #mode-directo.op-aumento .chip.active{
+    background:rgba(239,100,97,0.18);
+    border-color:var(--danger);
+    color:var(--danger);
+  }
 
   /* Stepper (cantidad de personas) */
   .stepper{
@@ -551,13 +577,13 @@
     gap:10px;
   }
   .step-btn{
-    width:52px;
-    height:52px;
+    width:46px;
+    height:46px;
     flex-shrink:0;
     background:var(--bg);
     border:1px solid var(--border);
     color:var(--ink);
-    font-size:22px;
+    font-size:20px;
     font-weight:700;
     border-radius:8px;
     cursor:pointer;
@@ -618,7 +644,7 @@
     display:flex;
     align-items:center;
     gap:8px;
-    margin-bottom:10px;
+    margin-bottom:6px;
     background:var(--bg);
     border:1px solid var(--border);
     border-radius:8px;
@@ -653,6 +679,14 @@
     background:rgba(201,138,62,0.18);
     color:var(--amber-bright);
   }
+  .chain-row .chain-op button.active[data-op="descuento"]{
+    background:rgba(94,156,107,0.18);
+    color:var(--good);
+  }
+  .chain-row .chain-op button.active[data-op="aumento"]{
+    background:rgba(239,100,97,0.18);
+    color:var(--danger);
+  }
   .chain-row input[type=text]{
     min-height:40px;
     padding:0 10px;
@@ -684,18 +718,18 @@
   .chip.add-step{width:100%; text-align:center;}
 
   .hint{
-    font-size:12px;
+    font-size:11.5px;
     color:var(--ink-dim);
-    margin-top:10px;
-    line-height:1.5;
+    margin-top:6px;
+    line-height:1.4;
   }
 
   /* Resultado: plano, sin ticket, todo en la misma tarjeta */
   .result{
     display:flex;
     flex-direction:column;
-    margin-top:16px;
-    padding:14px 16px;
+    margin-top:10px;
+    padding:10px 14px;
     border-radius:8px;
     background:var(--result-bg);
     border:1px solid var(--result-border);
@@ -706,7 +740,7 @@
     font-size:13px;
     color:var(--ink-dim);
     text-align:center;
-    padding:6px 0;
+    padding:4px 0;
   }
   .result-empty.result-warning{
     color:var(--danger);
@@ -716,15 +750,15 @@
     display:flex;
     justify-content:space-between;
     gap:10px;
-    font-size:14px;
-    padding:7px 0;
+    font-size:13.5px;
+    padding:5px 0;
     border-bottom:1px solid var(--border);
   }
   .result-row:last-of-type{border-bottom:none;}
   .result-row.copyable{
     cursor:pointer;
     margin:0 -8px;
-    padding:7px 8px;
+    padding:5px 8px;
     border-radius:6px;
   }
   .result-row.copyable:hover{background:rgba(255,255,255,0.04);}
@@ -751,12 +785,12 @@
     display:flex;
     justify-content:space-between;
     align-items:baseline;
-    margin-bottom:8px;
-    padding-bottom:12px;
+    margin-bottom:6px;
+    padding-bottom:8px;
     border-bottom:1px solid var(--border);
   }
   .result-hero .lbl{
-    font-size:13px;
+    font-size:12.5px;
     font-weight:700;
     letter-spacing:.03em;
     text-transform:uppercase;
@@ -765,7 +799,7 @@
   .result-hero .val{
     font-family:'JetBrains Mono',monospace;
     font-weight:700;
-    font-size:28px;
+    font-size:25px;
     font-variant-numeric:tabular-nums;
   }
   .result-hero .val.down{color:var(--good);}
@@ -781,10 +815,10 @@
   .result-badge.down{background:rgba(94,156,107,0.16); color:var(--good);}
   .result-badge.up{background:rgba(201,96,62,0.16); color:var(--danger);}
 
-  .actions{display:flex; gap:8px; margin-top:14px;}
+  .actions{display:flex; gap:8px; margin-top:10px;}
   .actions button{
     flex:1;
-    min-height:46px;
+    min-height:42px;
     border-radius:8px;
     font-family:'Archivo',sans-serif;
     font-weight:700;
@@ -902,23 +936,25 @@
 
       <!-- Modo directo -->
       <div id="mode-directo">
-        <div class="field">
-          <label for="p-precio">Precio original</label>
-          <div class="input-money">
-            <span class="prefix">$</span>
-            <input type="text" id="p-precio" inputmode="decimal" enterkeyhint="next" placeholder="0" value="1000">
+        <div class="field-row">
+          <div class="field">
+            <label for="p-precio">Precio original</label>
+            <div class="input-money">
+              <span class="prefix">$</span>
+              <input type="text" id="p-precio" inputmode="decimal" enterkeyhint="next" placeholder="0" value="1000">
+            </div>
+          </div>
+          <div class="field">
+            <label for="p-pct">Porcentaje</label>
+            <div class="input-percent">
+              <input type="text" id="p-pct" inputmode="decimal" enterkeyhint="next" placeholder="0" value="20">
+              <span class="suffix">%</span>
+            </div>
           </div>
         </div>
         <div class="op-row">
           <button class="op-btn active" data-op="descuento">Descuento</button>
           <button class="op-btn" data-op="aumento">Aumento</button>
-        </div>
-        <div class="field">
-          <label for="p-pct">Porcentaje</label>
-          <div class="input-percent">
-            <input type="text" id="p-pct" inputmode="decimal" enterkeyhint="next" placeholder="0" value="20">
-            <span class="suffix">%</span>
-          </div>
         </div>
         <div class="chips" id="pct-chips">
           <button class="chip" data-val="5">5%</button>
@@ -1068,7 +1104,7 @@
           <span class="suffix">%</span>
         </div>
       </div>
-      <div class="chips" id="propina-chips" style="margin-bottom:14px;">
+      <div class="chips" id="propina-chips" style="margin-bottom:8px;">
         <button class="chip" data-val="0">Sin propina</button>
         <button class="chip" data-val="10">10%</button>
         <button class="chip" data-val="15">15%</button>
@@ -1135,7 +1171,7 @@
       </div>
       <p class="hint" id="dolar-updated"></p>
 
-      <div class="field" style="margin-top:16px;">
+      <div class="field" style="margin-top:8px;">
         <label for="dolar-monto">Monto</label>
         <input type="text" id="dolar-monto" inputmode="decimal" enterkeyhint="next" placeholder="0" value="100">
       </div>
@@ -1699,11 +1735,13 @@
   });
 
   let op = 'descuento';
+  const modeDirectoDiv = document.getElementById('mode-directo');
   document.querySelectorAll('.op-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       op = btn.dataset.op;
+      modeDirectoDiv.classList.toggle('op-aumento', op === 'aumento');
       renderPrecios();
     });
   });
