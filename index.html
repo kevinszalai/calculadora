@@ -1071,15 +1071,15 @@
         <input type="text" id="m-valor" inputmode="decimal" enterkeyhint="next" placeholder="0" value="150">
       </div>
       <div class="field">
-        <label for="m-unidad">Unidad</label>
-        <select id="m-unidad">
-          <option value="mm">Milímetros (mm)</option>
-          <option value="cm" selected>Centímetros (cm)</option>
-          <option value="m">Metros (m)</option>
-          <option value="km">Kilómetros (km)</option>
-          <option value="in">Pulgadas (in)</option>
-          <option value="yd">Yardas (yd)</option>
-        </select>
+        <label>Unidad</label>
+        <div class="chips" id="m-unidad-chips">
+          <button type="button" class="chip m-unidad-btn" data-unidad="mm">mm</button>
+          <button type="button" class="chip m-unidad-btn active" data-unidad="cm">cm</button>
+          <button type="button" class="chip m-unidad-btn" data-unidad="m">m</button>
+          <button type="button" class="chip m-unidad-btn" data-unidad="km">km</button>
+          <button type="button" class="chip m-unidad-btn" data-unidad="in">in</button>
+          <button type="button" class="chip m-unidad-btn" data-unidad="yd">yd</button>
+        </div>
       </div>
 
       <div class="result" id="receipt-medidas" aria-live="polite" aria-atomic="true"></div>
@@ -2052,15 +2052,23 @@ ${label}: ${fmtNum(pct,2)}%`;
 
   // ================= MEDIDAS =================
   const mValor = document.getElementById('m-valor');
-  const mUnidad = document.getElementById('m-unidad');
-  [mValor, mUnidad].forEach(el => el.addEventListener('input', renderMedidas));
+  let mUnidadSeleccionada = 'cm';
+  document.querySelectorAll('.m-unidad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.m-unidad-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      mUnidadSeleccionada = btn.dataset.unidad;
+      renderMedidas();
+    });
+  });
+  mValor.addEventListener('input', renderMedidas);
 
   let lastMedidasText = '';
 
   function renderMedidas(){
     const el = document.getElementById('receipt-medidas');
     const valor = parseNum(mValor.value);
-    const unidad = mUnidad.value;
+    const unidad = mUnidadSeleccionada;
     if (isNaN(valor)){
       el.innerHTML = emptyResult('Cargá un valor para convertir.');
       setTone(el, null);
@@ -2496,7 +2504,7 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
     if (!dolarData) return;
     const sorted = CASA_ORDER.map(c => dolarData.find(d => d.casa === c)).filter(Boolean);
     dolarRatesEl.innerHTML = sorted.map(d => `
-      <div class="result-row ${d.casa === 'oficial' ? 'selected' : ''}"><span>${CASA_LABELS[d.casa] || d.nombre}</span><span>$${fmt(d.compra)} / $${fmt(d.venta)}</span></div>
+      <div class="result-row ${d.casa === dolarSelectedCasa ? 'selected' : ''}"><span>${CASA_LABELS[d.casa] || d.nombre}</span><span>$${fmt(d.compra)} / $${fmt(d.venta)}</span></div>
     `).join('');
     const first = sorted[0];
     if (first){
@@ -2522,6 +2530,7 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
         dolarCasaChips.querySelectorAll('.dolar-casa-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         dolarSelectedCasa = btn.dataset.casa;
+        renderDolarRates();
         renderDolar();
       });
     });
