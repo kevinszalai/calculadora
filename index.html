@@ -831,7 +831,13 @@
     text-align:center;
     padding:6px 4px;
     border-radius:6px;
+    background:none;
+    border:1px solid transparent;
+    cursor:pointer;
+    font-family:'Archivo',sans-serif;
   }
+  .dolar-rate-item:hover{border-color:var(--border);}
+  .dolar-rate-item:focus-visible{outline:2px solid var(--amber-bright); outline-offset:1px;}
   .dolar-rate-item.selected{background:rgba(46,196,182,0.10);}
   .drl-label{
     font-size:11px;
@@ -1411,7 +1417,7 @@
     if (navigator.vibrate) navigator.vibrate(ms || 12);
   }
   document.addEventListener('click', (e) => {
-    if (e.target.closest('.tab-btn, .mode-btn, .op-btn, .op-btn-a, .op-btn-b, .chain-op-btn, .chip, .r3-mode-btn, .step-btn, .clear-btn, .chain-remove, .result-row.copyable, .swap-btn, .a11y-btn, .dolar-dir-btn, .link-toggle, .talles-tipo-btn')){
+    if (e.target.closest('.tab-btn, .mode-btn, .op-btn, .op-btn-a, .op-btn-b, .chain-op-btn, .chip, .r3-mode-btn, .step-btn, .clear-btn, .chain-remove, .result-row.copyable, .swap-btn, .a11y-btn, .dolar-dir-btn, .link-toggle, .talles-tipo-btn, .dolar-rate-item')){
       buzz();
     }
   });
@@ -2530,19 +2536,34 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
     if (document.visibilityState === 'visible') maybeAutoRefreshDolar();
   });
 
+  function selectDolarCasa(casa){
+    dolarSelectedCasa = casa;
+    renderDolarRates();
+    renderDolar();
+  }
+
   function renderDolarRates(){
     if (!dolarData) return;
     const sorted = CASA_ORDER.map(c => dolarData.find(d => d.casa === c)).filter(Boolean);
     dolarRatesEl.innerHTML = `
       <div class="dolar-rate-grid">
         ${sorted.map(d => `
-          <div class="dolar-rate-item ${d.casa === dolarSelectedCasa ? 'selected' : ''}">
+          <button type="button" class="dolar-rate-item ${d.casa === dolarSelectedCasa ? 'selected' : ''}" data-casa="${d.casa}">
             <div class="drl-label">${CASA_LABELS[d.casa] || d.nombre}</div>
             <div class="drl-value">$${fmt(d.venta)}</div>
-          </div>
+          </button>
         `).join('')}
       </div>
     `;
+    dolarRatesEl.querySelectorAll('.dolar-rate-item').forEach(item => {
+      item.addEventListener('click', () => {
+        selectDolarCasa(item.dataset.casa);
+        // sincroniza también los chips de abajo
+        dolarCasaChips.querySelectorAll('.dolar-casa-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.casa === item.dataset.casa);
+        });
+      });
+    });
     const first = sorted[0];
     if (first){
       try{
@@ -2566,9 +2587,7 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
       btn.addEventListener('click', () => {
         dolarCasaChips.querySelectorAll('.dolar-casa-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        dolarSelectedCasa = btn.dataset.casa;
-        renderDolarRates();
-        renderDolar();
+        selectDolarCasa(btn.dataset.casa);
       });
     });
   }
