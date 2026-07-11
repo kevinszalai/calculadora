@@ -240,7 +240,7 @@
     left:0;
     right:0;
     padding:12px 20px;
-    padding-top:calc(12px + env(safe-area-inset-top));
+    padding-top:max(40px, calc(12px + env(safe-area-inset-top)));
     background:var(--card);
     border-bottom:1px solid var(--border);
     display:none;
@@ -539,18 +539,24 @@
   }
   .op-row button:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
 
-  .chips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px;}
+  .chips{display:flex; flex-wrap:nowrap; gap:4px; margin-bottom:4px;}
   .chip{
+    flex:1;
+    min-width:0;
     min-height:34px;
     background:var(--bg);
     border:1px solid var(--border);
     color:var(--ink-dim);
     font-family:'JetBrains Mono',monospace;
-    font-size:13px;
+    font-size:12px;
     font-weight:600;
-    padding:0 12px;
+    padding:0 2px;
     border-radius:8px;
     cursor:pointer;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    text-align:center;
   }
   .chip:hover{border-color:var(--amber); color:var(--amber-bright);}
   .chip:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
@@ -1176,8 +1182,8 @@
         <input type="text" id="dolar-monto" inputmode="decimal" enterkeyhint="next" placeholder="0" value="100">
       </div>
       <div class="field">
-        <label for="dolar-casa">Tipo de dólar</label>
-        <select id="dolar-casa"><option>Cargando…</option></select>
+        <label>Tipo de dólar</label>
+        <div class="chips" id="dolar-casa-chips"></div>
       </div>
       <div class="segment">
         <button type="button" class="dolar-dir-btn active" data-dir="ars-usd">ARS → USD</button>
@@ -2441,7 +2447,8 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
 
   const dolarRatesEl = document.getElementById('dolar-rates');
   const dolarUpdatedEl = document.getElementById('dolar-updated');
-  const dolarCasaSelect = document.getElementById('dolar-casa');
+  const dolarCasaChips = document.getElementById('dolar-casa-chips');
+  let dolarSelectedCasa = 'oficial';
   const dolarMontoInput = document.getElementById('dolar-monto');
 
   async function fetchDolar(){
@@ -2459,7 +2466,7 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
       if (!Array.isArray(data) || data.length === 0) throw new Error('respuesta vacía');
       dolarData = data;
       dolarLastFetch = Date.now();
-      populateDolarCasaSelect();
+      populateDolarCasaChips();
       renderDolarRates();
       renderDolar();
     }catch(e){
@@ -2502,11 +2509,22 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
     }
   }
 
-  function populateDolarCasaSelect(){
-    const current = dolarCasaSelect.value;
+  function populateDolarCasaChips(){
     const available = CASA_ORDER.filter(c => dolarData.some(d => d.casa === c));
-    dolarCasaSelect.innerHTML = available.map(c => `<option value="${c}">${CASA_LABELS[c]}</option>`).join('');
-    if (available.includes(current)) dolarCasaSelect.value = current;
+    if (!available.includes(dolarSelectedCasa)){
+      dolarSelectedCasa = available.includes('oficial') ? 'oficial' : (available[0] || 'oficial');
+    }
+    dolarCasaChips.innerHTML = available.map(c =>
+      `<button type="button" class="chip dolar-casa-btn ${c === dolarSelectedCasa ? 'active' : ''}" data-casa="${c}">${CASA_LABELS[c]}</button>`
+    ).join('');
+    dolarCasaChips.querySelectorAll('.dolar-casa-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        dolarCasaChips.querySelectorAll('.dolar-casa-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        dolarSelectedCasa = btn.dataset.casa;
+        renderDolar();
+      });
+    });
   }
 
   document.querySelectorAll('.dolar-dir-btn').forEach(btn => {
@@ -2518,7 +2536,6 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
     });
   });
   dolarMontoInput.addEventListener('input', renderDolar);
-  dolarCasaSelect.addEventListener('input', renderDolar);
   document.getElementById('dolar-refresh').addEventListener('click', () => fetchDolar());
 
   function renderDolar(){
@@ -2529,7 +2546,7 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
       return;
     }
     const monto = parseNum(dolarMontoInput.value);
-    const casa = dolarData.find(d => d.casa === dolarCasaSelect.value);
+    const casa = dolarData.find(d => d.casa === dolarSelectedCasa);
     if (isNaN(monto) || !casa){
       el.innerHTML = emptyResult('Cargá un monto.');
       setTone(el, null);
