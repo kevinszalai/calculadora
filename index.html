@@ -141,6 +141,72 @@
     opacity:0.8;
   }
 
+  /* Modal "Acerca de" */
+  .modal-overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    z-index:40;
+  }
+  .modal-card{
+    width:100%;
+    max-width:400px;
+    max-height:85vh;
+    overflow-y:auto;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:22px;
+    box-shadow:0 24px 48px -16px rgba(0,0,0,0.6);
+  }
+  .modal-header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:14px;
+  }
+  .modal-header h2{
+    font-size:17px;
+    font-weight:800;
+    margin:0;
+    color:var(--ink);
+  }
+  .modal-close{
+    flex-shrink:0;
+    width:30px;
+    height:30px;
+    background:none;
+    border:1px solid var(--border);
+    border-radius:8px;
+    color:var(--ink-dim);
+    font-size:14px;
+    cursor:pointer;
+  }
+  .modal-close:hover{color:var(--ink);}
+  .modal-close:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
+  .modal-text{
+    font-size:13.5px;
+    color:var(--ink-dim);
+    line-height:1.55;
+    margin:0 0 14px;
+  }
+  .modal-text.small{font-size:12px; margin-bottom:10px;}
+  .modal-text a{color:var(--amber-bright); text-decoration:underline; text-underline-offset:2px;}
+  .modal-list{
+    margin:0 0 16px;
+    padding:0 0 14px 18px;
+    border-bottom:1px solid var(--border);
+    font-size:13px;
+    color:var(--ink-dim);
+    line-height:1.9;
+  }
+  .modal-list b{color:var(--ink);}
+
   .toast{
     position:fixed;
     left:12px;
@@ -729,6 +795,27 @@
       <button type="button" class="a11y-btn" id="a11y-large-btn" title="Texto grande" aria-label="Activar texto grande">Aa</button>
       <button type="button" class="a11y-btn" id="a11y-contrast-btn" title="Alto contraste" aria-label="Activar alto contraste">◐</button>
       <button type="button" class="a11y-btn" id="theme-light-btn" title="Modo claro" aria-label="Activar modo claro">☀</button>
+      <button type="button" class="a11y-btn" id="about-btn" title="Acerca de" aria-label="Acerca de esta app">ⓘ</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="about-overlay" style="display:none;">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="about-title">
+      <div class="modal-header">
+        <h2 id="about-title">Calculadora · Todo en uno</h2>
+        <button type="button" class="modal-close" id="about-close" aria-label="Cerrar">✕</button>
+      </div>
+      <p class="modal-text">Una calculadora práctica y gratis para lo que se complica todos los días: porcentajes, medidas, propina, regla de 3, cotización del dólar y talles. Cargás un número y listo — sin cuentas, sin anuncios, sin registrarte.</p>
+      <ul class="modal-list">
+        <li><b>Precios</b> — descuentos, aumentos, cadenas de % y comparaciones</li>
+        <li><b>Medidas</b> — mm, cm, m, km, pulgadas y yardas</li>
+        <li><b>Propina</b> — dividí la cuenta entre varias personas</li>
+        <li><b>Regla de 3</b> — directa e inversa</li>
+        <li><b>Dólar</b> — cotización en vivo (oficial, blue, tarjeta)</li>
+        <li><b>Talles</b> — ropa y calzado, entre Argentina, US, UK y Europa</li>
+      </ul>
+      <p class="modal-text small">🔒 Todo se calcula en tu propio celular. La única excepción es la cotización del dólar, que se consulta a dolarapi.com.</p>
+      <p class="modal-text small">¿Te sirvió? Armo herramientas a medida como esta para tu negocio — <a href="mailto:TU-EMAIL-ACA@ejemplo.com?subject=Quiero%20una%20calculadora%20a%20medida">escribime</a>.</p>
     </div>
   </div>
 
@@ -1145,6 +1232,26 @@
     writeA11yPref(A11Y_LIGHT_KEY, isLight);
     syncA11yButtons();
     syncThemeMeta();
+  });
+
+  // ---------- Modal "Acerca de" ----------
+  const aboutBtn = document.getElementById('about-btn');
+  const aboutOverlay = document.getElementById('about-overlay');
+  const aboutClose = document.getElementById('about-close');
+
+  function openAbout(){
+    aboutOverlay.style.display = 'flex';
+  }
+  function closeAbout(){
+    aboutOverlay.style.display = 'none';
+  }
+  aboutBtn.addEventListener('click', openAbout);
+  aboutClose.addEventListener('click', closeAbout);
+  aboutOverlay.addEventListener('click', (e) => {
+    if (e.target === aboutOverlay) closeAbout(); // tocar el fondo oscuro cierra
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && aboutOverlay.style.display === 'flex') closeAbout();
   });
 
   // ---------- Instalar app ----------
