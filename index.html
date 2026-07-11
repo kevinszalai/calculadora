@@ -2607,12 +2607,12 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
     let resultado, label, detalle, prefix;
     if (dolarDir === 'ars-usd'){
       resultado = monto / casa.venta;
-      label = 'Recibís';
+      label = 'Total';
       prefix = 'US$';
       detalle = `Dólar ${nombre} a $${fmt(casa.venta)} (venta)`;
     } else {
       resultado = monto * casa.venta;
-      label = 'Recibís';
+      label = 'Total';
       prefix = '$';
       detalle = `Dólar ${nombre} a $${fmt(casa.venta)} (venta)`;
     }
