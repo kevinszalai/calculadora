@@ -821,6 +821,36 @@
   .result-badge.down{background:rgba(94,156,107,0.16); color:var(--good);}
   .result-badge.up{background:rgba(201,96,62,0.16); color:var(--danger);}
 
+  /* Cotizaciones de Dólar: grilla horizontal en vez de filas apiladas */
+  .dolar-rate-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:6px;
+  }
+  .dolar-rate-item{
+    text-align:center;
+    padding:6px 4px;
+    border-radius:6px;
+  }
+  .dolar-rate-item.selected{background:rgba(46,196,182,0.10);}
+  .drl-label{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:.04em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    margin-bottom:2px;
+  }
+  .dolar-rate-item.selected .drl-label{color:var(--amber-bright);}
+  .drl-value{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:700;
+    font-size:14px;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink);
+  }
+  .dolar-rate-item.selected .drl-value{color:var(--amber-bright); font-weight:800;}
+
   .actions{display:flex; gap:8px; margin-top:10px;}
   .actions button{
     flex:1;
@@ -2503,16 +2533,23 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
   function renderDolarRates(){
     if (!dolarData) return;
     const sorted = CASA_ORDER.map(c => dolarData.find(d => d.casa === c)).filter(Boolean);
-    dolarRatesEl.innerHTML = sorted.map(d => `
-      <div class="result-row ${d.casa === dolarSelectedCasa ? 'selected' : ''}"><span>${CASA_LABELS[d.casa] || d.nombre}</span><span>$${fmt(d.compra)} / $${fmt(d.venta)}</span></div>
-    `).join('');
+    dolarRatesEl.innerHTML = `
+      <div class="dolar-rate-grid">
+        ${sorted.map(d => `
+          <div class="dolar-rate-item ${d.casa === dolarSelectedCasa ? 'selected' : ''}">
+            <div class="drl-label">${CASA_LABELS[d.casa] || d.nombre}</div>
+            <div class="drl-value">$${fmt(d.venta)}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
     const first = sorted[0];
     if (first){
       try{
         const date = new Date(first.fechaActualizacion);
-        dolarUpdatedEl.textContent = 'Compra / Venta · Actualizado ' + date.toLocaleString('es-AR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
+        dolarUpdatedEl.textContent = 'Venta · Actualizado ' + date.toLocaleString('es-AR', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'});
       }catch(e){
-        dolarUpdatedEl.textContent = 'Compra / Venta';
+        dolarUpdatedEl.textContent = 'Venta';
       }
     }
   }
@@ -2574,10 +2611,10 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
       prefix = 'US$';
       detalle = `Dólar ${nombre} a $${fmt(casa.venta)} (venta)`;
     } else {
-      resultado = monto * casa.compra;
+      resultado = monto * casa.venta;
       label = 'Recibís';
       prefix = '$';
-      detalle = `Dólar ${nombre} a $${fmt(casa.compra)} (compra)`;
+      detalle = `Dólar ${nombre} a $${fmt(casa.venta)} (venta)`;
     }
 
     el.innerHTML = `
