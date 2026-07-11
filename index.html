@@ -234,31 +234,46 @@
   }
   .toast.visible{opacity:1; transform:translateY(0); pointer-events:auto;}
 
-  .scroll-to-result-btn{
+  .live-result-bar{
     position:fixed;
-    left:50%;
-    bottom:16px;
-    transform:translateX(-50%) translateY(6px);
-    background:var(--amber);
-    color:var(--on-accent);
-    border:none;
-    border-radius:20px;
-    padding:11px 20px;
+    top:0;
+    left:0;
+    right:0;
+    padding:12px 20px;
+    padding-top:calc(12px + env(safe-area-inset-top));
+    background:var(--card);
+    border-bottom:1px solid var(--border);
+    display:none;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    z-index:50;
+    box-shadow:0 10px 24px -10px rgba(0,0,0,0.5);
+    cursor:pointer;
+  }
+  .live-result-bar.visible{display:flex;}
+  .lrb-label{
     font-family:'Archivo',sans-serif;
+    font-size:11px;
     font-weight:700;
-    font-size:13px;
-    box-shadow:0 12px 28px -8px rgba(0,0,0,0.55);
-    z-index:35;
-    opacity:0;
-    pointer-events:none;
-    transition:opacity .15s ease, transform .15s ease;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--ink-dim);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
-  .scroll-to-result-btn.visible{
-    opacity:1;
-    transform:translateX(-50%) translateY(0);
-    pointer-events:auto;
+  .lrb-value{
+    font-family:'JetBrains Mono',monospace;
+    font-weight:800;
+    font-size:19px;
+    font-variant-numeric:tabular-nums;
+    color:var(--ink);
+    white-space:nowrap;
+    flex-shrink:0;
   }
-  .scroll-to-result-btn:focus-visible{outline:2px solid var(--amber-bright); outline-offset:2px;}
+  .lrb-value.down{color:var(--good);}
+  .lrb-value.up{color:var(--danger);}
   #undo-btn{
     background:none;
     border:none;
@@ -474,7 +489,7 @@
     font-weight:600;
     padding:0 14px;
     border-radius:8px;
-    scroll-margin-top:16px;
+    scroll-margin-top:76px;
   }
   select{
     font-family:'Archivo',sans-serif;
@@ -1184,7 +1199,10 @@
   <button type="button" id="undo-btn">Deshacer</button>
 </div>
 
-<button type="button" class="scroll-to-result-btn" id="scroll-to-result-btn">↓ Ver resultado</button>
+<div class="live-result-bar" id="live-result-bar">
+  <span class="lrb-label" id="lrb-label">Resultado</span>
+  <span class="lrb-value" id="lrb-value">—</span>
+</div>
 
 <script>
   // ---------- Accesibilidad (persistido en este navegador) ----------
@@ -2273,30 +2291,13 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
   });
 
   // ---------- Que el resultado no quede tapado por el teclado ----------
-  // Al tocar un campo, el teclado del celular ocupa la mitad de abajo de
-  // la pantalla. Acomodamos el scroll para que el campo quede arriba del
-  // todo, dejando el mayor espacio posible visible debajo (justo donde
-  // suele estar el resultado) por encima del teclado.
-  let lastFocusedField = null;
-
-  function scrollFieldAboveKeyboard(){
-    if (lastFocusedField && document.activeElement === lastFocusedField && lastFocusedField.scrollIntoView){
-      lastFocusedField.scrollIntoView({ block: 'start', behavior: 'smooth' });
-    }
-  }
-
-  document.addEventListener('focusin', (e) => {
-    if (!e.target.matches('input[type=text], select')) return;
-    lastFocusedField = e.target;
-    // Alternativa por si el navegador no dispara el resize de visualViewport
-    // (o lo hace distinto): igual probamos con un tiempo fijo como red de
-    // contención.
-    setTimeout(scrollFieldAboveKeyboard, 350);
-  });
-
-  // Botón flotante "Ver resultado": aparece solo si, mientras escribís, el
-  // resultado de la pestaña activa queda tapado por el teclado.
-  const scrollToResultBtn = document.getElementById('scroll-to-result-btn');
+  // En vez de depender de scrollear o de un botón que hay que descubrir,
+  // mientras estás escribiendo aparece una barra fija arriba de la
+  // pantalla (el teclado nunca tapa esa zona) con el resultado en vivo,
+  // actualizándose con cada tecla.
+  const liveResultBar = document.getElementById('live-result-bar');
+  const lrbLabel = document.getElementById('lrb-label');
+  const lrbValue = document.getElementById('lrb-value');
 
   function getActiveResultEl(){
     const activePanel = document.querySelector('.panel.active');
@@ -2305,50 +2306,64 @@ ${fmtNum(c,3)} equivale a ${fmtNum(d,4)}`;
     return results.length ? results[results.length - 1] : null;
   }
 
-  function isMostlyVisible(el){
-    if (!el) return true;
-    const rect = el.getBoundingClientRect();
-    const visibleHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    return rect.top < visibleHeight - 30 && rect.bottom > 0;
+  // Lee el contenido a mostrar directamente del DOM ya renderizado, así
+  // no hace falta tocar cada función de cálculo para mantenerlo al día.
+  function readResultSummary(resultEl){
+    if (!resultEl) return null;
+    const hero = resultEl.querySelector('.result-hero');
+    if (hero){
+      const lbl = hero.querySelector('.lbl');
+      const val = hero.querySelector('.val');
+      if (val){
+        const cls = val.classList.contains('down') ? 'down' : (val.classList.contains('up') ? 'up' : '');
+        return { label: lbl ? lbl.textContent : 'Resultado', value: val.textContent, cls };
+      }
+    }
+    // Sin hero (ej. Medidas, Talles, cotizaciones de Dólar): mostramos la
+    // fila destacada si hay una, o si no, la primera fila disponible.
+    const row = resultEl.querySelector('.result-row.selected') || resultEl.querySelector('.result-row');
+    if (row){
+      const spans = row.querySelectorAll('span');
+      if (spans.length >= 2){
+        return { label: spans[0].textContent, value: spans[1].textContent, cls: '' };
+      }
+    }
+    return null;
   }
 
-  function positionScrollToResultBtn(){
-    if (!window.visualViewport) return;
-    const keyboardHeight = window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop;
-    scrollToResultBtn.style.bottom = Math.max(16, keyboardHeight + 14) + 'px';
-  }
-
-  function updateScrollToResultBtn(){
+  function updateLiveResultBar(){
     const active = document.activeElement;
     const isTypingField = active && active.matches && active.matches('input[type=text], select');
     if (!isTypingField){
-      scrollToResultBtn.classList.remove('visible');
+      liveResultBar.classList.remove('visible');
       return;
     }
-    const resultEl = getActiveResultEl();
-    if (resultEl && !isMostlyVisible(resultEl)){
-      positionScrollToResultBtn();
-      scrollToResultBtn.classList.add('visible');
-    } else {
-      scrollToResultBtn.classList.remove('visible');
+    const summary = readResultSummary(getActiveResultEl());
+    if (!summary){
+      liveResultBar.classList.remove('visible');
+      return;
     }
+    lrbLabel.textContent = summary.label;
+    lrbValue.textContent = summary.value;
+    lrbValue.className = 'lrb-value ' + summary.cls;
+    liveResultBar.classList.add('visible');
   }
 
-  scrollToResultBtn.addEventListener('click', () => {
+  liveResultBar.addEventListener('click', () => {
     const resultEl = getActiveResultEl();
-    if (resultEl) resultEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
-    buzz();
+    if (resultEl && resultEl.scrollIntoView) resultEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
   });
 
-  document.addEventListener('focusin', () => setTimeout(updateScrollToResultBtn, 400));
-  document.addEventListener('focusout', () => setTimeout(updateScrollToResultBtn, 200));
-  document.addEventListener('scroll', updateScrollToResultBtn, true);
-  if (window.visualViewport){
-    window.visualViewport.addEventListener('resize', () => {
-      scrollFieldAboveKeyboard();
-      updateScrollToResultBtn();
-    });
-  }
+  document.addEventListener('focusin', (e) => {
+    if (!e.target.matches('input[type=text], select')) return;
+    updateLiveResultBar();
+  });
+  document.addEventListener('focusout', () => setTimeout(updateLiveResultBar, 150));
+  // Se actualiza con cada tecla o cada cambio de select, en cualquier parte
+  // de la app (delegado, cubre también los campos que se agregan después,
+  // como los pasos de la cadena).
+  document.addEventListener('input', updateLiveResultBar);
+  document.addEventListener('click', () => setTimeout(updateLiveResultBar, 20), true);
 
   // ---------- Enter/Listo pasa al siguiente campo ----------
   // Evita tener que tocar el próximo campo a mano; en el último campo
